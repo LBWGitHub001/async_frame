@@ -4,14 +4,11 @@
 
 #ifndef ASYNCINFERER_H
 #define ASYNCINFERER_H
-#define DEFAULT_INFER VinoInfer
 #include "inferer/preset/VinoInfer.h"
 #ifdef TRT
-#undef DEFAULT_INFER
-#define DEFAULT_INFER TrtInfer
 #include "inferer/preset/TrtInfer.h"
 #endif
-#define AUTO_INFER DEFAULT_INFER
+
 #include <future>
 #include <utility>
 #include <condition_variable>

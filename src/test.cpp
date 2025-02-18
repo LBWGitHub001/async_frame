@@ -1,7 +1,7 @@
 //
 // Created by lbw on 25-2-11.
 //
-#include <inferer/AsyncInferer.h>
+#include "AsyncInferFrame.hpp"
 #include <iostream>
 #include <thread>
 using namespace std::placeholders;
@@ -68,7 +68,7 @@ int main()
 {
     AsyncInferer infer;
 
-    infer.setInfer(std::make_unique<VinoInfer>(
+    infer.setInfer(std::make_unique<AUTO_INFER>(
         "/home/lbw/RM2025/kalman-fix/RM2024_nice/src/rm_utils/model/robot.onnx",
         false,
         "CPU"

@@ -37,8 +37,8 @@ if (CUDA_FOUND)
 endif ()
 # include
 include_directories(include)
-file(GLOB_RECURSE LIB_SRC src/inferer/*.cpp)
-add_library(${PROJECT_NAME} ${LIB_SRC})
+file(GLOB_RECURSE LIB_SRC src/inferer/*.cpp src/threadPool/*.cpp)
+add_library(${PROJECT_NAME} SHARED ${LIB_SRC})
 target_include_directories(${PROJECT_NAME} PUBLIC ${OpenCV_INCLUDE_DIRS} ${CERES_INCLUDE_DIRS})
 
 target_link_libraries(${PROJECT_NAME}
@@ -57,7 +57,11 @@ install(DIRECTORY include/
 )
 
 ##########################################################################
-add_executable(testInferFrame src/test.cpp)
-target_link_libraries(testInferFrame
+add_executable(test src/test.cpp)
+target_link_libraries(test
+        ${PROJECT_NAME})
+
+add_executable(testTP testThreadPool.cpp)
+target_link_libraries(testTP
         ${PROJECT_NAME})
 ##########################################################################
