@@ -40,6 +40,23 @@ TrtInfer::TrtInfer(const std::string& model_path,bool is_warmup, const std::stri
         TrtInfer::warmup();
 }
 
+TrtInfer::TrtInfer(const TrtInfer& other)
+{
+    model_path_ = other.getModelPath();
+    device_name_ = "CUDA";
+    TrtInfer::init();
+}
+
+void TrtInfer::setModel(const std::string& model_path)
+{
+    model_path_ = model_path;
+}
+
+const std::string& TrtInfer::getModelPath() const
+{
+    return model_path_;
+}
+
 TrtInfer::~TrtInfer()
 {
     delete context_;

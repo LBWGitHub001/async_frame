@@ -6,7 +6,7 @@
 #define ASYNCINFERFRAME_H
 
 #include "inferer/AsyncInferer.h"
-#include "threadPool/ThreadPool.h"
+#include "threadPool/threadPool.h"
 
 #ifdef TRT
 #define AUTO_INFER TrtInfer

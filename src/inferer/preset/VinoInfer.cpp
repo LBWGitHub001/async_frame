@@ -20,8 +20,35 @@ VinoInfer::VinoInfer(const std::string& model_path, bool is_warmup, const std::s
         VinoInfer::warmup();
 }
 
+VinoInfer::VinoInfer(VinoInfer& other)
+{
+    model_path_ = other.getModelPath();
+    device_name_ = other.getDevice();
+    VinoInfer::init();
+}
+
 VinoInfer::~VinoInfer()
 {
+}
+
+void VinoInfer::setModel(const std::string& model_pat)
+{
+    model_path_ = model_pat;
+}
+
+void VinoInfer::setDevice(const std::string& device_name)
+{
+    device_name_ = device_name;
+}
+
+const std::string& VinoInfer::getModelPath() const
+{
+    return model_path_;
+}
+
+const std::string& VinoInfer::getDevice() const
+{
+    return device_name_;
 }
 
 void VinoInfer::init()

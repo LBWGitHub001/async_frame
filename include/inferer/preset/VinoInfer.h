@@ -11,8 +11,15 @@ class VinoInfer :
     public InferBase
 {
 public:
-    VinoInfer(const std::string& model_path, bool is_warmup = false, const std::string& device_name_ = "CPU");
+    VinoInfer() = default;
+    explicit  VinoInfer(const std::string& model_path, bool is_warmup = false, const std::string& device_name_ = "CPU");
+    explicit VinoInfer(VinoInfer& other);
     ~VinoInfer();
+    void setModel(const std::string& model_pat) override;
+    void setDevice(const std::string& device_name);
+    const std::string& getModelPath() const override;
+    const std::string& getDevice() const;
+
     void init() override;
     void warmup() override;
     void preMalloc();

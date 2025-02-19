@@ -14,7 +14,10 @@ public:
     virtual ~InferBase() = default;
 
     InferBase() = default;
+    InferBase(const InferBase& other);
 
+    virtual void setModel(const std::string& model_path) = 0;
+    virtual const std::string& getModelPath() const = 0;
     virtual void init() =0;
     virtual const std::vector<det::Binding>& getInputBinding();
     virtual const std::vector<det::Binding>& getOutputBinding();

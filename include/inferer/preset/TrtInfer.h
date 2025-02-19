@@ -19,8 +19,13 @@ class TrtInfer
     : public InferBase
 {
 public:
+    TrtInfer() = default;
     explicit TrtInfer(const std::string& model_path,bool is_warmup = false,const std::string& device_name_="CUDA");
+    explicit TrtInfer(const TrtInfer& other);
     ~TrtInfer() override;
+    void setModel(const std::string& model_path) override;
+    const std::string& getModelPath() const override;
+
     void init() override;
     void warmup() override;
     void preMalloc();

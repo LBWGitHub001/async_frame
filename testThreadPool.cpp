@@ -1,7 +1,8 @@
 //
 // Created by lbw on 25-2-18.
 //
-#include "threadPool/ThreadPool.h"
+#include "threadPool/threadPool.h"
+#include "threadPool/staticThreadPool.h"
 #include <opencv2/opencv.hpp>
 
 std::vector<int>* function(std::vector<int>& i)

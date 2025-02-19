@@ -2,7 +2,7 @@
 // Created by lbw on 25-2-17.
 //
 
-#include "threadPool/ThreadPool.h"
+#include "threadPool/threadPool.h"
 
 #include <future>
 

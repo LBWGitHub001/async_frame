@@ -7,6 +7,7 @@
 #include "threadPool/check.h"
 #include <future>
 
+
 namespace thread_pool
 {
     struct TaskThread
@@ -21,6 +22,15 @@ namespace thread_pool
         }
     };
 
+    template<class _Static = nullptr_t>
+    struct StaticTaskThread
+    {
+        std::unique_ptr<std::future<void*>> future = nullptr;
+        time_t timestamp = 1e10;
+        void* result_ptr = nullptr;
+        _Static infer;
+    };
+
     struct Result
     {
         void* result_ptr = nullptr;
@@ -30,6 +40,11 @@ namespace thread_pool
             result_ptr = other.result_ptr;
             timestamp = other.timestamp;
         }
+    };
+
+    struct Info
+    {
+
     };
 }
 
