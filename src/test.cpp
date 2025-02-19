@@ -62,6 +62,12 @@ void postProcess(void* output, std::vector<det::Binding>& output_bindings,long t
         results.push_back(rects[i]);
     }
     // std::cout << "PostProcess Done" << std::endl;
+    std::vector<float> tmp;
+    for (int i = 0; i < size; i++)
+    {
+        tmp.push_back(buf[i]);
+    }
+    tmp[0];
 }
 
 int main()
@@ -69,9 +75,7 @@ int main()
     AsyncInferer infer;
 
     infer.setInfer(std::make_unique<AUTO_INFER>(
-        "/home/lbw/RM2025/kalman-fix/RM2024_nice/src/rm_utils/model/robot.onnx",
-        false,
-        "CPU"
+        "/home/lbw/RM2025/kalman-fix/AsyncInferFrame/model/best.onnx"
     ));
     infer.registerCallback(postProcess);
 

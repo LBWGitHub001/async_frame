@@ -18,6 +18,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # find package
 find_package(OpenCV 4 REQUIRED)
 find_package(OpenVINO REQUIRED COMPONENTS Runtime ONNX)
+find_package(Boost REQUIRED)
 
 #cuda
 find_package(CUDA REQUIRED)
