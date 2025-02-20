@@ -18,10 +18,12 @@ public:
     InferBase(const InferBase& other);
 
     virtual void setModel(const std::string& model_path) = 0;
-    virtual const std::string& getModelPath() const = 0;
+    [[nodiscard]] virtual const std::string& getModelPath() const = 0;
     virtual void init() =0;
     virtual const std::vector<det::Binding>& getInputBinding();
     virtual const std::vector<det::Binding>& getOutputBinding();
+    virtual const int get_size() = 0;
+    virtual const std::string get_name() = 0;
 
     virtual void copy_from_data(const void* data) = 0;
     virtual void infer() = 0;

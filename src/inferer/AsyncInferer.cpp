@@ -11,40 +11,70 @@
 
 AsyncInferer::AsyncInferer()
 {
+    result_start_ = true;
+    std::thread th(&AsyncInferer::result_loop, this);
+    th.detach();
 
 }
 
 AsyncInferer::~AsyncInferer()
 {
-
+    thread_pool_.join();
+    result_start_ = false;
+    std::this_thread::sleep_for(std::chrono::milliseconds(result_delay_*5));
 }
 
 bool AsyncInferer::setInfer(std::unique_ptr<InferBase> infer)
 {
-    infer_ = std::move(infer);
+    try
+    {
+        infer_ = std::move(infer);
     getNetStructure();
+    }
+    catch (...)
+    {
+        return false;
+    }
+    return true;
 }
 
-void AsyncInferer::pushInput(const std::function<void(void**, std::vector<det::Binding>&)>& get_input, long timestamp)
+void AsyncInferer::pushInput(const std::function<void(void**, std::vector<det::Binding>&)>& get_input)
 {
-    thread_pool::TaskThread task;
-    task.timestamp = timestamp;
-
-    auto ff = [&](int pool_id,int thread_id)
+    auto ff = [&](int pool_id, int thread_id)
     {
         void* input = nullptr;
-        get_input(&input,input_bindings_);
-        ThreadPool::try_to_malloc_static<TrtInfer>(pool_id,thread_id);
-        return input;
+        get_input(&input, input_bindings_);
+        ThreadPool::try_to_malloc_static(pool_id, thread_id, infer_->get_size());
+        void* ptr;
+        get_staticMem_ptr(pool_id, thread_id, &ptr);
+        InferBase* infer = nullptr;
+        auto name = infer_->get_name();
+        if (name == "VinoInfer")
+        {
+            infer = static_cast<VinoInfer*>(ptr);
+        }
+        else if (name == "TrtInfer")
+        {
+            infer = static_cast<TrtInfer*>(ptr);
+        }
+        else
+        {
+            throw "Unknown Infer";
+        }
+        infer->copy_from_data(input);
+        infer->infer();
+        auto output_vec = infer->getResult();
+        post_function_(output_vec, output_bindings_);
+        return nullptr;
     };
 
     thread_pool_.push(std::move(ff));
 }
 
-void AsyncInferer::registerCallback(
-    std::function<void(void*, std::vector<det::Binding>& output_bindings, long)> callback)
+void AsyncInferer::registerPostprocess(
+    std::function<void*(std::vector<void*>&, std::vector<det::Binding>& output_bindings)> callback)
 {
-    callback_function_ = std::move(callback);
+    post_function_ = std::move(callback);
     std::cout << "Registering callback function" << std::endl;
 }
 

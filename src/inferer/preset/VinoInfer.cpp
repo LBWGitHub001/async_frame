@@ -51,6 +51,16 @@ const std::string& VinoInfer::getDevice() const
     return device_name_;
 }
 
+const int VinoInfer::get_size()
+{
+    return sizeof(VinoInfer);
+}
+
+const std::string VinoInfer::get_name()
+{
+    return "VinoInfer";
+}
+
 void VinoInfer::init()
 {
     if (ov_core_ == nullptr)
@@ -238,6 +248,7 @@ void VinoInfer::infer_async(const void* input, void** output)
 std::vector<void*>& VinoInfer::getResult()
 {
     auto output_tensor = request_.get_output_tensor();
+    //TODO 这里应该适配更多的数据输出情况
     outputs_.push_back(output_tensor.data<float>());
     return outputs_;
 }

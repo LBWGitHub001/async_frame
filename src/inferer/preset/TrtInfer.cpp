@@ -57,6 +57,16 @@ const std::string& TrtInfer::getModelPath() const
     return model_path_;
 }
 
+const int TrtInfer::get_size()
+{
+    return sizeof(TrtInfer);
+}
+
+const std::string TrtInfer::get_name()
+{
+    return "TrtInfer";
+}
+
 TrtInfer::~TrtInfer()
 {
     delete context_;

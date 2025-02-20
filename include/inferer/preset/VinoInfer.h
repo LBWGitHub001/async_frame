@@ -20,6 +20,8 @@ public:
     void setDevice(const std::string& device_name);
     const std::string& getModelPath() const override;
     const std::string& getDevice() const;
+    const int get_size() override;
+    const std::string get_name() override;
 
     void init() override;
     void warmup() override;

@@ -26,6 +26,8 @@ public:
     ~TrtInfer() override;
     void setModel(const std::string& model_path) override;
     const std::string& getModelPath() const override;
+    const int get_size() override;
+    const std::string get_name() override;
 
     void init() override;
     void warmup() override;

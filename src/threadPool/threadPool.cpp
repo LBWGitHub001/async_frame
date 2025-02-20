@@ -126,7 +126,7 @@ void ThreadPool::force_push(std::function<void*(int pool_id,int thread_id)>&& ta
     push(std::move(task));
 }
 
-bool ThreadPool::fast_get(void* output)
+bool ThreadPool::fast_get(void** output)
 {
     thread_pool::Result result;
     if (results_.empty())
@@ -134,7 +134,7 @@ bool ThreadPool::fast_get(void* output)
     result = results_.front();
     results_.pop();
     //memcpy(output,result.result_ptr,sizeof(Type));
-    output = result.result_ptr;
+    *output = result.result_ptr;
     return true;
 }
 

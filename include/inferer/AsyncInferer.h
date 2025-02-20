@@ -34,11 +34,12 @@ public:
     ~AsyncInferer();
 
     bool setInfer(std::unique_ptr<InferBase> infer);
-    void registerCallback(
-        std::function<void(void*, std::vector<det::Binding>&, long)> callback);
-    [[deprecated("You need one more param")]]
-    void pushInput(const std::function<void(void**, std::vector<det::Binding>&)>& input_bindings, long timestamp);
+    void registerPostprocess(std::function<void*(std::vector<void*>&, std::vector<det::Binding>&)> callback);
+    void registerCallback(std::function<void(void*)> callback);
 
+    void pushInput(const std::function<void(void**, std::vector<det::Binding>&)>& input_bindings);
+
+    void set_getResult_timer(int time);
 private:
     void getNetStructure();
     //网络信息
@@ -46,12 +47,41 @@ private:
     std::vector<det::Binding> output_bindings_;
     //推理器管理
     std::shared_ptr<InferBase> infer_;
-    std::function<void(void*, std::vector<det::Binding>&, long timestamp)> callback_function_;
+    std::function<void*(std::vector<void*>&, std::vector<det::Binding>&)> post_function_;
     //线程管理
     ThreadPool thread_pool_;
-    //Test
-    int max_queue_len_=0;
+    //结果管理
+    int result_delay_ = 100;
+    bool result_start_ = true;
+    std::function<void(void*)> callback_;
+    void result_loop();
 };
 
 
+inline void AsyncInferer::set_getResult_timer(int time)
+{
+    result_delay_ = time;
+}
+
+inline void AsyncInferer::registerCallback(std::function<void(void*)> callback)
+{
+    callback_ = std::move(callback);
+}
+
+inline void AsyncInferer::result_loop()
+{
+    while (result_start_)
+    {
+        void* output;
+        if (thread_pool_.fast_get(&output))
+        {
+            callback_(output);
+            free(output);
+        }
+        else
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(result_delay_));
+        }
+    }
+}
 #endif //ASYNCINFERER_H

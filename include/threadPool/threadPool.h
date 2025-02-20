@@ -33,21 +33,21 @@ public:
     void force_push(std::function<void*(int pool_id,int thread_id)>&& task);
 
     template <typename Type>
-    bool get(void* output)
+    bool get(void** output)
     {
         thread_pool::Result result;
         if (results_.empty())
             return false;
         result = results_.front();
         results_.pop();
-        //memcpy(output,result.result_ptr,sizeof(Type));
+        memcpy(*output,result.result_ptr,sizeof(Type));
         auto a = static_cast<Type*>(output);
         *a = *static_cast<Type*>(result.result_ptr);
         delete static_cast<Type*>(result.result_ptr);
         return true;
     }
 
-    bool fast_get(void* output);
+    bool fast_get(void** output);
     bool image_get(cv::Mat& image);
 
     template <class checkedClass>
@@ -58,17 +58,15 @@ public:
 
     friend bool get_staticMem_ptr(int pool_id, int thread_id,void** ptr);
 
-    template <typename Memory>
-    static bool try_to_malloc_static(int pool_id,int thread_id)
+    static bool try_to_malloc_static(int pool_id,int thread_id,int size)
     {
         auto& staticMem = pools_ptr_[pool_id]->static_memory_vector_[thread_id];
         if (staticMem != nullptr)
             return false;
-        staticMem = malloc(sizeof(Memory));
+        staticMem = malloc(size);
         return true;
     }
 
-    template <typename Memory>
     static bool try_to_free_static(int pool_id,int thread_id)
     {
         auto& staticMem = pools_ptr_[pool_id]->static_memory_vector_[thread_id];
