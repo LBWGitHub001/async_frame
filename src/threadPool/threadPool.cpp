@@ -63,7 +63,7 @@ bool ThreadPool::clearStaticMem()
         if (static_memory_vector_[i] != nullptr)
         {
             if (clearStaticMem_func_ == nullptr)
-                throw "未设置静态内存释放方法，也不能自动释放";
+                throw std::runtime_error("ThreadPool::clearStaticMem() called,The static release method is not set, and it cannot be released automatically, resulting in memory leaks.");
             clearStaticMem_func_(static_memory_vector_[i]);
         }
 

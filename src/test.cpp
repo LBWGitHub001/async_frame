@@ -6,7 +6,7 @@
 #include <thread>
 using namespace std::placeholders;
 
-void preProcess(void** input, std::vector<det::Binding>& input_bindings, cv::Mat& img)
+void* preProcess(std::vector<det::Binding>& input_bindings, cv::Mat& img)
 {
     std::cout << "preProcess Start" << std::endl;
     cv::Mat img_tmp;
@@ -26,14 +26,15 @@ void preProcess(void** input, std::vector<det::Binding>& input_bindings, cv::Mat
     cv::Mat input_tensor = cv::dnn::blobFromImage(img_tmp);
     auto out = input_tensor.ptr<float>();
     int size = input_bindings[0].size * input_bindings[0].dsize;
-    *input = malloc(size);
-    memcpy(*input, out, size);
+    void* input = malloc(size);
+    memcpy(input, out, size);
+    return input;
 }
 
 void* postProcess(std::vector<void*>& output_vec, std::vector<det::Binding>& output_bindings)
 {
     auto output = output_vec[0];
-    std::vector<cv::Rect>* results = (std::vector<cv::Rect>*)malloc(sizeof(std::vector<cv::Rect>));
+    std::vector<cv::Rect>* results = new std::vector<cv::Rect>();
     std::cout << "postprocessing" << std::endl;
     std::vector<cv::Rect> rects;
     std::vector<float> confs;
@@ -59,10 +60,11 @@ void* postProcess(std::vector<void*>& output_vec, std::vector<det::Binding>& out
     }
     std::vector<int> indexes;
     cv::dnn::NMSBoxes(rects, confs, 0.6, 0.6, indexes);
-    for (auto i : indexes)
-    {
-        results->push_back(rects[i]);
-    }
+    if (!indexes.empty())
+        for (auto i : indexes)
+        {
+            results->push_back(rects[i]);
+        }
     return results;
 }
 
@@ -73,19 +75,24 @@ void callback(void* result)
 
 int main()
 {
-    AsyncInferer infer;
+    AsyncInferer<AUTO_INFER> infer;
 
     infer.setInfer(std::make_unique<AUTO_INFER>(
         "/home/lbw/RM2025/kalman-fix/AsyncInferFrame/model/robot.engine"
     ));
     infer.registerPostprocess(postProcess);
-
+    infer.registerCallback(callback);
+    // infer.registerFreeStatic([](void* result)
+    // {
+    //     std::vector<cv::Rect>* results = (std::vector<cv::Rect>*)result;
+    //     delete results;
+    // });
     std::string path = "/home/lbw/RM2025/kalman-fix/RM2024_nice/src/rm_utils/picture/0000";
 
     ThreadPool pool;
-    for (auto j = 0; j < 1; j++)
+    for (auto j = 0; j < 5; j++)
     {
-        for (auto i = 0; i < 1; i++)
+        for (auto i = 0; i < 10; i++)
         {
             std::string num = std::to_string(i);
             if (i < 10)
@@ -93,7 +100,7 @@ int main()
             std::string pic = num + ".jpg";
             std::string pic_path = path + pic;
             cv::Mat img = cv::imread(pic_path, cv::IMREAD_COLOR);
-            infer.pushInput(std::bind(preProcess, _1, _2, std::move(img.clone())));
+            infer.pushInput(std::bind(preProcess, _1, std::move(img.clone())));
         }
     }
 

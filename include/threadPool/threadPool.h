@@ -58,12 +58,13 @@ public:
 
     friend bool get_staticMem_ptr(int pool_id, int thread_id,void** ptr);
 
-    static bool try_to_malloc_static(int pool_id,int thread_id,int size)
+    template <class _Infer>
+    static bool try_to_malloc_static(int pool_id,int thread_id,_Infer* master)
     {
         auto& staticMem = pools_ptr_[pool_id]->static_memory_vector_[thread_id];
         if (staticMem != nullptr)
             return false;
-        staticMem = malloc(size);
+        staticMem = new _Infer(*master);
         return true;
     }
 
