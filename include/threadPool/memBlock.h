@@ -9,15 +9,9 @@
 
 
 class MemBlockBase {
+    public:
     MemBlockBase() = default;
     virtual ~MemBlockBase() = default;
-
-    virtual void free() = 0;
-    virtual void* malloc(size_t size) = 0;
-
-
-
-
 };
 
 

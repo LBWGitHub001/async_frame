@@ -28,6 +28,7 @@ typedef struct
 
 class AsyncInferer
 {
+
 public:
     explicit AsyncInferer();
     ~AsyncInferer();
@@ -36,7 +37,6 @@ public:
     void registerCallback(
         std::function<void(void*, std::vector<det::Binding>&, long)> callback);
     [[deprecated("You need one more param")]]
-    void pushInput(const std::function<void(void**)>& get_input, long timestamp);
     void pushInput(const std::function<void(void**, std::vector<det::Binding>&)>& input_bindings, long timestamp);
 
 private:
@@ -45,7 +45,7 @@ private:
     std::vector<det::Binding> input_bindings_;
     std::vector<det::Binding> output_bindings_;
     //推理器管理
-    std::unique_ptr<InferBase> infer_;
+    std::shared_ptr<InferBase> infer_;
     std::function<void(void*, std::vector<det::Binding>&, long timestamp)> callback_function_;
     //线程管理
     ThreadPool thread_pool_;

@@ -26,11 +26,11 @@ public:
 
     void join();
     bool clearStaticMem();
-    void setClear(std::function<void(std::shared_ptr<MemBlockBase>)> func);
+    void setClear(std::function<void(void*)> func);
 
-    void push(std::function<void*()>&& task);
-    void free_push(std::function<void*()>&& task);
-    void force_push(std::function<void*()>&& task);
+    void push(std::function<void*(int pool_id,int thread_id)>&& task);
+    void free_push(std::function<void*(int pool_id,int thread_id)>&& task);
+    void force_push(std::function<void*(int pool_id,int thread_id)>&& task);
 
     template <typename Type>
     bool get(void* output)
@@ -56,7 +56,28 @@ public:
         return CheckType<checkedClass>::value == std::true_type::value;
     }
 
-    friend bool get_staticMem_ptr(int pool_id, int thread_id, std::shared_ptr<MemBlockBase>& ptr);
+    friend bool get_staticMem_ptr(int pool_id, int thread_id,void** ptr);
+
+    template <typename Memory>
+    static bool try_to_malloc_static(int pool_id,int thread_id)
+    {
+        auto& staticMem = pools_ptr_[pool_id]->static_memory_vector_[thread_id];
+        if (staticMem != nullptr)
+            return false;
+        staticMem = malloc(sizeof(Memory));
+        return true;
+    }
+
+    template <typename Memory>
+    static bool try_to_free_static(int pool_id,int thread_id)
+    {
+        auto& staticMem = pools_ptr_[pool_id]->static_memory_vector_[thread_id];
+        if (staticMem == nullptr)
+            return false;
+        free(staticMem);
+        staticMem = nullptr;
+        return true;
+    }
 
 private:
     //运行参数
@@ -67,8 +88,7 @@ private:
 
     //线程管理
     std::vector<std::unique_ptr<thread_pool::TaskThread>> task_threads_;
-    std::vector<std::unique_ptr<InferBase>> infers_;
-    std::vector<std::shared_ptr<MemBlockBase>> static_memory_vector_;
+    std::vector<void*> static_memory_vector_;
 
     std::mutex assign_mtx_;
     int threadNum_;
@@ -81,27 +101,27 @@ private:
     //资源自动释放机制
     void release(int thread_id);
     std::mutex release_mtx_;
-    std::function<void(std::shared_ptr<MemBlockBase>)> clearStaticMem_func_;
+    std::function<void(void*)> clearStaticMem_func_;
 
     //id信息
-    inline std::shared_ptr<MemBlockBase>  get_staticMem_ptr(int thread_id);
+    inline void* get_staticMem_ptr(int thread_id);
     static int pools_count_;
     static std::vector<ThreadPool*> pools_ptr_;
     int pool_id_;
 };
 
 
-inline std::shared_ptr<MemBlockBase>  ThreadPool::get_staticMem_ptr(int thread_id)
+inline void* ThreadPool::get_staticMem_ptr(int thread_id)
 {
     return static_memory_vector_[thread_id];
 }
 
-inline bool get_staticMem_ptr(int pool_id, int thread_id, std::shared_ptr<MemBlockBase>& ptr)
+inline bool get_staticMem_ptr(int pool_id, int thread_id, void** ptr)
 {
     ThreadPool* pool_ptr = ThreadPool::pools_ptr_[pool_id];
     if (pool_ptr != nullptr)
     {
-        ptr = pool_ptr->get_staticMem_ptr(thread_id);
+        *ptr = pool_ptr->get_staticMem_ptr(thread_id);
         return true;
     }
     return false;

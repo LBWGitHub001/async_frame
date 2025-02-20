@@ -6,7 +6,7 @@
 namespace fs = ghc::filesystem;
 
 VinoInfer::VinoInfer(const std::string& model_path, bool is_warmup, const std::string& device_name)
-    : InferBase()
+    : InferBase(),MemBlockBase()
 {
     std::cout << std::endl << "||--------------You are using OpenVino--------------||" << std::endl;
     fs::path path{model_path};
@@ -20,7 +20,7 @@ VinoInfer::VinoInfer(const std::string& model_path, bool is_warmup, const std::s
         VinoInfer::warmup();
 }
 
-VinoInfer::VinoInfer(VinoInfer& other)
+VinoInfer::VinoInfer(VinoInfer& other):InferBase(),MemBlockBase()
 {
     model_path_ = other.getModelPath();
     device_name_ = other.getDevice();

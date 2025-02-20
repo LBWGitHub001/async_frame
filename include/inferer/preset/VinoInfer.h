@@ -6,9 +6,10 @@
 #define VINOINFER_H
 
 #include "inferer/preset/InferBase.h"
+#include "threadPool/memBlock.h"
 
 class VinoInfer :
-    public InferBase
+    public InferBase,public MemBlockBase
 {
 public:
     VinoInfer() = default;

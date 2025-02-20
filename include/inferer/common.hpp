@@ -122,7 +122,7 @@ inline int type_to_size(const ov::element::Type& dataType)
         return 64;
     default:
         return 4;
-        //FYT_ASSERT("this inputType is Incorrect!");
+    //FYT_ASSERT("this inputType is Incorrect!");
     }
 }
 
@@ -148,7 +148,7 @@ inline int type_to_CVtype(const ov::element::Type& dataType)
         return CV_16U;
     default:
         return CV_32F;
-        //FYT_ASSERT("this inputType is Incorrect!");
+    //FYT_ASSERT("this inputType is Incorrect!");
     }
 }
 
@@ -230,7 +230,12 @@ namespace det
     };
 } // namespace det
 
+enum class InferState
+{
+    Balance,
+    Accelerate,
 
+};
 
 // class ModelInputBase
 // {

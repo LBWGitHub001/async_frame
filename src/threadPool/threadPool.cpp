@@ -71,16 +71,16 @@ bool ThreadPool::clearStaticMem()
     return true;
 }
 
-void ThreadPool::setClear(std::function<void(std::shared_ptr<MemBlockBase>)> func)
+void ThreadPool::setClear(std::function<void(void*)> func)
 {
     clearStaticMem_func_ = std::move(func);
 }
 
-void ThreadPool::free_push(std::function<void*()>&& task)
+void ThreadPool::free_push(std::function<void*(int pool_id,int thread_id)>&& task)
 {
 }
 
-void ThreadPool::push(std::function<void*()>&& task)
+void ThreadPool::push(std::function<void*(int pool_id,int thread_id)>&& task)
 {
     //分配线程和时间戳
     time_t timestamp = NULL;
@@ -98,8 +98,7 @@ void ThreadPool::push(std::function<void*()>&& task)
     //创建任务
     auto fut = std::async(std::launch::async,[this,task,thread_id]()
     {
-        void* result = task();
-        //TODO 这里需要以某种方式返回thread_id
+        void* result = task(pool_id_,thread_id);
         std::thread end(&ThreadPool::release, this, thread_id);
         end.detach();
         --num_busy_;
@@ -116,7 +115,7 @@ void ThreadPool::push(std::function<void*()>&& task)
     task_threads_[thread_id] = std::move(task_thread);
 }
 
-void ThreadPool::force_push(std::function<void*()>&& task)
+void ThreadPool::force_push(std::function<void*(int pool_id,int thread_id)>&& task)
 {
     if (num_busy_ == threadNum_)
     {

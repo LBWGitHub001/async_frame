@@ -11,12 +11,13 @@
 #include <NvInferPlugin.h>
 #include <NvOnnxParser.h>
 #include <NvInferRuntime.h>
+#include "threadPool/memBlock.h"
 #endif
 
 #ifdef TRT
 
 class TrtInfer
-    : public InferBase
+    : public InferBase, public MemBlockBase
 {
 public:
     TrtInfer() = default;

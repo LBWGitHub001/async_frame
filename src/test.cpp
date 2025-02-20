@@ -72,34 +72,38 @@ void postProcess(void* output, std::vector<det::Binding>& output_bindings,long t
 
 int main()
 {
-    AsyncInferer infer;
-
-    infer.setInfer(std::make_unique<AUTO_INFER>(
-        "/home/lbw/RM2025/kalman-fix/AsyncInferFrame/model/best.onnx"
-    ));
-    infer.registerCallback(postProcess);
+    // AsyncInferer infer;
+    //
+    // infer.setInfer(std::make_unique<AUTO_INFER>(
+    //     "/home/lbw/RM2025/kalman-fix/AsyncInferFrame/model/best.onnx"
+    // ));
+    // infer.registerCallback(postProcess);
 
     std::string path = "/home/lbw/RM2025/kalman-fix/RM2024_nice/src/rm_utils/picture/0000";
-    auto now = std::chrono::high_resolution_clock::now();
-    std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
 
+    ThreadPool pool;
     for (auto j=0;j<5;j++)
     {
            for (auto i = 0; i < 30; i++)
-    {
-        std::string num = std::to_string(i);
-        if (i < 10)
-            num = "0" + num;
-        std::string pic = num + ".jpg";
-        std::string pic_path = path + pic;
-        cv::Mat img = cv::imread(pic_path, cv::IMREAD_COLOR);
-        infer.pushInput(std::bind(preProcess, _1, _2, std::move(img.clone())), i+j*30);
-               std::this_thread::sleep_for(std::chrono::microseconds(100));
+           {
+               std::string num = std::to_string(i);
+               if (i < 10)
+                   num = "0" + num;
+               std::string pic = num + ".jpg";
+               std::string pic_path = path + pic;
+               cv::Mat img = cv::imread(pic_path, cv::IMREAD_COLOR);
+               // infer.pushInput(std::bind(preProcess, _1, _2, std::move(img.clone())), i+j*30);
+               //        std::this_thread::sleep_for(std::chrono::microseconds(100));
+               // pool.push([&]()
+               // {
+               //     void* input = nullptr;
+               //
+               //     preProcess(input,)
+               //
+               //     return
+               // });
     }
     }
 
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(200000));
-    std::cout << "SHUTDOWN" << std::endl;
     return 0;
 }

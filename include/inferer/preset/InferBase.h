@@ -7,8 +7,9 @@
 #include <string>
 #include <opencv2/opencv.hpp>
 #include "inferer/common.hpp"
+#include "threadPool/memBlock.h"
 
-class InferBase
+class InferBase : public MemBlockBase
 {
 public:
     virtual ~InferBase() = default;
