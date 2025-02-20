@@ -30,6 +30,9 @@ template<class _Infer>
 class AsyncInferer
 {
 public:
+    /*!
+     * @brief 构造函数，启动所有服务
+     */
     explicit AsyncInferer()
     {
         result_start_ = true;
@@ -44,6 +47,9 @@ public:
 
     }
 
+    /*!
+     * @brief 析构函数，调用时会阻塞当前线程，直至所有线程全部结束，然后停止所有服务
+     */
     ~AsyncInferer()
     {
         thread_pool_.join();
@@ -51,6 +57,11 @@ public:
         std::this_thread::sleep_for(std::chrono::milliseconds(result_delay_*5));
     }
 
+    /*!
+     * 设置推理器
+     * @param infer 推理器的unique_ptr
+     * @return 返回一个布尔值，当有异常时为false，当正常时为true
+     */
     bool setInfer(std::unique_ptr<_Infer> infer)
     {
         try
@@ -65,17 +76,31 @@ public:
         return true;
     }
 
-    void registerPostprocess(std::function<void*(std::vector<void*>&, std::vector<det::Binding>&)> callback)
+    /*!
+     * @brief 注册后处理函数，推理器完成推理后调用
+     * @param postprocess 后处理函数，接受两个参数，(原始数据,NN输出层形状)
+     */
+    void registerPostprocess(std::function<void*(std::vector<void*>&, std::vector<det::Binding>&)> postprocess)
     {
-        post_function_ = std::move(callback);
+        post_function_ = std::move(postprocess);
         std::cout << "Registering callback function" << std::endl;
     }
 
+    /*!
+     * @brief 注册回调函数，当取得答案后会调用该方法
+     * @param callback 回调函数，参数是postprocess返回的类型
+     * @attention 需要确保手动释放，避免内存泄漏
+     */
     void registerCallback(std::function<void(void*)> callback)
     {
         callback_ = std::move(callback);
     }
 
+    /*!
+     * @brief 释放线程池静态空间方法的覆写
+     * @attention 现有预设已有自动方法自动析构，不需要进行覆写该成员，如果使用第三方推理器，可能需要覆写
+     * @param FreeStatic 释放线程池静态空间的方法覆写方法
+     */
     void registerFreeStatic(std::function<void(void*)> FreeStatic)
     {
         thread_pool_.setClear(FreeStatic);
@@ -106,7 +131,6 @@ public:
             post_function_(output_vec, output_bindings_);
             return nullptr;
         };
-
         thread_pool_.push(std::move(ff));
     }
 
@@ -145,7 +169,7 @@ private:
     std::function<void(void*)> callback_;
 
     /*!
-     * @brief 调起程序的取结果循环
+     * @brief 调起程序的取结果循环，取到答案后会调用回调函数
      */
     void result_loop()
     {

@@ -5,6 +5,11 @@
 在cmake/FindTensorRT.cmake的`set(_TensorRT_SEARCH_NORMAL PATHS "/usr" )`
 中添加你的TensorRT安装路径
 
+# 最简调用方式
+1. setInfer
+2. registerPostprocess
+3. set_getResult_timer
+4. pushInput
 
 # 线程池(ThreadPool)
 # 函数说明

@@ -21,19 +21,58 @@
 class ThreadPool
 {
 public:
+    /*!
+     * @brief 构造函数，启动所有服务
+     */
     explicit ThreadPool();
+    /*!
+     * @brief 析构函数，阻塞当前线程，直至所有线程都结束，清空所有线程静态内存
+     */
     ~ThreadPool();
 
+    /*!
+     * @brief 阻塞调用线程，等待所有线程完毕
+     */
     void join();
+
+    /*!
+     * @brief 清除所有静态内存
+     * @return 清楚成功为true,清除失败为false,并抛出runtime_error
+     */
     bool clearStaticMem();
+
+    /*!
+     * @brief 设置静态内存的释放函数
+     * @param func 静态内存释放函数，传入一个void*
+     */
     void setClear(std::function<void(void*)> func);
 
+    /*!
+     * @brief 创建一个任务，并将其推入池,如果池中没有空闲线程，将会阻塞
+     * @param task 任务，接受两个参数pool_id,thread_id,用来访问静态内存，并且作为线程的唯一标识符
+     */
     void push(std::function<void*(int pool_id,int thread_id)>&& task);
+
+    /*!
+     * 无锁推入,需要保证调用环境线程安全
+     * @param task 任务，参数同上
+     */
     void free_push(std::function<void*(int pool_id,int thread_id)>&& task);
+
+    /*!
+     * @brief 强制推入，如果没有空闲线程就会创建一个空闲线程，强行开始任务，不阻塞
+     * @param task 任务，参数如上
+     */
     void force_push(std::function<void*(int pool_id,int thread_id)>&& task);
 
+    /*!
+     * @brief 获取线程运算结果,遵守FIFO顺序,不阻塞,深拷贝值
+     * @tparam Type 结果的类型
+     * @param output 传入一个结果的指针
+     * @return 返回一个布尔值,当获取成功时为true,获取失败时,为false,不阻塞
+     */
     template <typename Type>
-    bool get(void** output)
+    bool get(Type** output)
     {
         thread_pool::Result result;
         if (results_.empty())
@@ -41,23 +80,52 @@ public:
         result = results_.front();
         results_.pop();
         memcpy(*output,result.result_ptr,sizeof(Type));
-        auto a = static_cast<Type*>(output);
-        *a = *static_cast<Type*>(result.result_ptr);
         delete static_cast<Type*>(result.result_ptr);
         return true;
     }
 
+    /*!
+     * @brief 快速获取值,不阻塞,不拷贝,需要手动释放资源
+     * @param output 同上
+     * @return 同上
+     */
     bool fast_get(void** output);
+
+    /*!
+     * 如果运算结果是cv::Mat,则需要调用这个方法获取结果,否则将会造成内存泄漏的风险
+     * @param image 同上
+     * @return 同上
+     */
     bool image_get(cv::Mat& image);
 
+    /*!
+     * @brief 检查处理的数据是否支持静态内存的自动复制功能，如不能，需要重写拷贝
+     * @tparam checkedClass 待检查的类型
+     * @return 布尔值，true or false
+     */
     template <class checkedClass>
     bool check_inlaw()
     {
         return CheckType<checkedClass>::value == std::true_type::value;
     }
 
+    /*!
+     * @brief 静态方法,获取线程的静态内存空间
+     * @param pool_id 池id,一个线程池的唯一标识码
+     * @param thread_id 线程id,一个线程的唯一标识码
+     * @param ptr 提取的静态内存的指针
+     * @return 布尔值,如果已经被分配,返回true,否则返回false
+     */
     friend bool get_staticMem_ptr(int pool_id, int thread_id,void** ptr);
 
+    /*!
+     * @brief 在线程静态内存空间中申请一块空间
+     * @tparam _Infer 分配对象类型
+     * @param pool_id 池id
+     * @param thread_id 线程id
+     * @param master 使用拷贝构造拷贝其中的信息
+     * @return 布尔值,如果完成分配,返回true,否则,说明此空间上存在内容,先释放才能再次分配
+     */
     template <class _Infer>
     static bool try_to_malloc_static(int pool_id,int thread_id,_Infer* master)
     {
@@ -68,6 +136,12 @@ public:
         return true;
     }
 
+    /*!
+     * @brief 释放静态内存空间
+     * @param pool_id 池id
+     * @param thread_id 线程id
+     * @return 布尔值,释放成功为true,否则,说明此处原来没有没分配,返回false
+     */
     static bool try_to_free_static(int pool_id,int thread_id)
     {
         auto& staticMem = pools_ptr_[pool_id]->static_memory_vector_[thread_id];
