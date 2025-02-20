@@ -14,6 +14,7 @@
 #include <utility>
 #include <vector>
 #include "threadPool/common.h"
+#include "threadPool/memBlock.h"
 #include "inferer/preset/InferBase.h"
 
 
@@ -24,6 +25,8 @@ public:
     ~ThreadPool();
 
     void join();
+    bool clearStaticMem();
+    void setClear(std::function<void(std::shared_ptr<MemBlockBase>)> func);
 
     void push(std::function<void*()>&& task);
     void free_push(std::function<void*()>&& task);
@@ -53,15 +56,19 @@ public:
         return CheckType<checkedClass>::value == std::true_type::value;
     }
 
+    friend bool get_staticMem_ptr(int pool_id, int thread_id, std::shared_ptr<MemBlockBase>& ptr);
+
 private:
     //运行参数
     int MIN_PUSH_DELAY_ms = 100; //输入端的两个输入之间的最短时间（最大频率）
-
+    //辅助量
     void resize();
     std::mutex resize_mtx_;
 
+    //线程管理
     std::vector<std::unique_ptr<thread_pool::TaskThread>> task_threads_;
     std::vector<std::unique_ptr<InferBase>> infers_;
+    std::vector<std::shared_ptr<MemBlockBase>> static_memory_vector_;
 
     std::mutex assign_mtx_;
     int threadNum_;
@@ -71,9 +78,33 @@ private:
     std::queue<thread_pool::Result> results_;
     std::queue<int> id_seq_;
 
+    //资源自动释放机制
     void release(int thread_id);
     std::mutex release_mtx_;
+    std::function<void(std::shared_ptr<MemBlockBase>)> clearStaticMem_func_;
+
+    //id信息
+    inline std::shared_ptr<MemBlockBase>  get_staticMem_ptr(int thread_id);
+    static int pools_count_;
+    static std::vector<ThreadPool*> pools_ptr_;
+    int pool_id_;
 };
 
+
+inline std::shared_ptr<MemBlockBase>  ThreadPool::get_staticMem_ptr(int thread_id)
+{
+    return static_memory_vector_[thread_id];
+}
+
+inline bool get_staticMem_ptr(int pool_id, int thread_id, std::shared_ptr<MemBlockBase>& ptr)
+{
+    ThreadPool* pool_ptr = ThreadPool::pools_ptr_[pool_id];
+    if (pool_ptr != nullptr)
+    {
+        ptr = pool_ptr->get_staticMem_ptr(thread_id);
+        return true;
+    }
+    return false;
+}
 
 #endif //THREADPOOL_H

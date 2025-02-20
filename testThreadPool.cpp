@@ -3,6 +3,7 @@
 //
 #include "threadPool/threadPool.h"
 #include "threadPool/staticThreadPool.h"
+#include <memory>
 #include <opencv2/opencv.hpp>
 
 std::vector<int>* function(std::vector<int>& i)
@@ -25,12 +26,12 @@ int main()
     ThreadPool pool;
     cv::Mat img = cv::imread("/home/lbw/RM2025/kalman-fix/RM2024_nice/src/rm_utils/picture/000006.jpg");
     std::vector<int> input = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-    for (auto i = 0; i < 1000; ++i)
+    for (auto i = 0; i < 100; ++i)
     {
         pool.force_push(std::bind(imgfuncton, std::ref(img)));
     }
     std::vector<std::vector<int>> results;
-    for (auto i = 0; i < 1000;)
+    for (auto i = 0; i < 100;)
     {
         cv::Mat image;
         if (pool.image_get(image))
@@ -43,7 +44,6 @@ int main()
     }
 
     pool.join();
-    // std::vector<int> vec{0,1,2,3,4,5,6,7,8,9};
-    // std::cout << sizeof(std::vector<int>) << std::endl;
+
     return 0;
 }

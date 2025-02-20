@@ -48,16 +48,7 @@ private:
     std::unique_ptr<InferBase> infer_;
     std::function<void(void*, std::vector<det::Binding>&, long timestamp)> callback_function_;
     //线程管理
-    // ThreadPool<nullptr_t> thread_pool_;
-    // void release_future();
-    // bool start_release_;
-    // std::thread thread_release_function_;
-    // std::queue<Task> future_queue_;
-    // std::mutex future_queue_mtx_;
-    // int max_queue = MAX_QUEUE_LEN;
-    // long latest_timestamp_;
-    // std::mutex latest_timestamp_mtx_;
-
+    ThreadPool thread_pool_;
     //Test
     int max_queue_len_=0;
 };

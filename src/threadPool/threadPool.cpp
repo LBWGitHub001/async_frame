@@ -5,27 +5,36 @@
 #include "threadPool/threadPool.h"
 
 #include <future>
+#include <utility>
+int ThreadPool::pools_count_ = 0;
+std::vector<ThreadPool*> ThreadPool::pools_ptr_;
 
 ThreadPool::ThreadPool()
 {
+    pools_count_++;
+    pool_id_ = pools_count_-1;
+    pools_ptr_.push_back(this);
     threadNum_ = 8;
     ptr_ = 0;
     num_busy_ = 0;
     for (auto i = 0; i < threadNum_; ++i)
     {
         task_threads_.push_back(nullptr);
+        static_memory_vector_.push_back(nullptr);
     }
 }
 
 ThreadPool::~ThreadPool()
 {
     join();
+    clearStaticMem();
+    pools_ptr_[pool_id_] = nullptr;
 }
 
 void ThreadPool::join()
 {
     std::cout << ".join() called" << std::endl;
-    while (1)
+    while (true)
     {
         std::cout << num_busy_.load() << std::endl;
         if (num_busy_ == 0)
@@ -36,7 +45,7 @@ void ThreadPool::join()
                 if (task_thread != nullptr && task_thread->future->valid())
                 {
                     void* result = task_thread->future->get();
-                    delete result;
+                    free(task_thread->result_ptr);
                 }
                 std::cout << "Released thread " << i << std::endl;
             }
@@ -45,6 +54,30 @@ void ThreadPool::join()
 
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
+}
+
+bool ThreadPool::clearStaticMem()
+{
+    for (auto i = 0; i < threadNum_; ++i)
+    {
+        if (static_memory_vector_[i] != nullptr)
+        {
+            if (clearStaticMem_func_ == nullptr)
+                throw "未设置静态内存释放方法，也不能自动释放";
+            clearStaticMem_func_(static_memory_vector_[i]);
+        }
+
+    }
+    return true;
+}
+
+void ThreadPool::setClear(std::function<void(std::shared_ptr<MemBlockBase>)> func)
+{
+    clearStaticMem_func_ = std::move(func);
+}
+
+void ThreadPool::free_push(std::function<void*()>&& task)
+{
 }
 
 void ThreadPool::push(std::function<void*()>&& task)
@@ -126,6 +159,7 @@ void ThreadPool::resize()
         for (auto i = 0; i < thread_num - threadNum_; ++i)
         {
             task_threads_.push_back(nullptr);
+            static_memory_vector_.push_back(nullptr);
         }
     }
     threadNum_ = thread_num;
