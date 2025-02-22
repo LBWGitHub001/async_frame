@@ -77,9 +77,9 @@ public:
 
     /*!
      * @brief 注册后处理函数，推理器完成推理后调用
-     * @param postprocess 后处理函数，接受两个参数，(原始数据,NN输出层形状)
+     * @param postprocess 后处理函数，接受三个参数，(原始数据,NN输出层形状,tag)
      */
-    void registerPostprocess(std::function<void*(std::vector<void*>&, std::vector<det::Binding>&)> postprocess)
+    void registerPostprocess(std::function<void*(std::vector<void*>&, std::vector<det::Binding>&,void*)> postprocess)
     {
         post_function_ = std::move(postprocess);
         std::cout << "Registering callback function" << std::endl;
@@ -110,9 +110,9 @@ public:
      * @param get_input 提供一个指针，获取数据的指针，其参数是NN的输入结构，返回值是数据的指针
      * @attention 需要使用malloc分配内存，否则可能导致自动释放内存出现故障
      */
-    void pushInput(const std::function<void*(std::vector<det::Binding>&)>& get_input)
+    void pushInput(const std::function<void*(std::vector<det::Binding>&)>& get_input,void* tag = nullptr)
     {
-        auto ff = [this,get_input](int pool_id, int thread_id)
+        auto ff = [this,get_input,tag](int pool_id, int thread_id)
         {
             void* input = get_input(input_bindings_);
             void* ptr;
@@ -128,10 +128,10 @@ public:
             infer->copy_from_data(input);
             infer->infer();
             std::vector<void*> output_vec = infer->getResult();
-            post_function_(output_vec, output_bindings_);
+            post_function_(output_vec, output_bindings_,tag);
             return nullptr;
         };
-        thread_pool_.push(std::move(ff));
+        thread_pool_.push(std::move(ff),tag);
     }
 
     /*!
@@ -164,7 +164,7 @@ private:
     std::string device_path;
     //推理器管理
     std::shared_ptr<_Infer> infer_;
-    std::function<void*(std::vector<void*>&, std::vector<det::Binding>&)> post_function_;
+    std::function<void*(std::vector<void*>&, std::vector<det::Binding>&,void*)> post_function_;
     //线程管理
     ThreadPool thread_pool_;
     //结果管理
