@@ -26,7 +26,7 @@ typedef struct
     long timestamp;
 } Task;
 
-template<class _Infer>
+template <class _Infer>
 class AsyncInferer
 {
 public:
@@ -44,7 +44,6 @@ public:
             _Infer* infer_ptr = (_Infer*)infer;
             delete infer_ptr;
         });
-
     }
 
     /*!
@@ -54,7 +53,7 @@ public:
     {
         thread_pool_.join();
         result_start_ = false;
-        std::this_thread::sleep_for(std::chrono::milliseconds(result_delay_*5));
+        std::this_thread::sleep_for(std::chrono::milliseconds(result_delay_ * 5));
     }
 
     /*!
@@ -117,7 +116,8 @@ public:
         {
             void* input = get_input(input_bindings_);
             void* ptr;
-            if (!ThreadPool::try_to_malloc_static<_Infer>(pool_id, thread_id, infer_.get()) && !get_staticMem_ptr(pool_id, thread_id, &ptr))
+            if (!ThreadPool::try_to_malloc_static<_Infer>(pool_id, thread_id, infer_.get()) && !get_staticMem_ptr(
+                pool_id, thread_id, &ptr))
             {
                 std::cout << "Failed to allocate memory for pool " << pool_id << " thread " << thread_id << std::endl;
                 throw std::runtime_error("Failed to allocate static memory for pool");
@@ -144,8 +144,9 @@ public:
         result_delay_ = time;
     }
 
-    inline std::vector<det::Binding> get_inputShape(){return input_bindings_;}
-    inline std::vector<det::Binding> get_outputShape(){return output_bindings_;}
+    inline std::vector<det::Binding> get_inputShape() { return input_bindings_; }
+    inline std::vector<det::Binding> get_outputShape() { return output_bindings_; }
+
 private:
     /*!
      * @brife 转存NN网络接口

@@ -7,7 +7,7 @@ if (NOT CMAKE_CXX_STANDARD)
 endif ()
 
 if (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    add_compile_options(-Wall -Wextra -Wpedantic -O3)
+    add_compile_options(-Wall -Wextra -Wpedantic)
 endif ()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
@@ -96,4 +96,8 @@ if(BUILD_TESTING)
     ament_lint_auto_find_test_dependencies()
 endif()
 
+###########################################33
+add_executable(testH test.cpp)
+target_link_libraries(testH ${PROJECT_NAME})
+##############################################3
 ament_package()

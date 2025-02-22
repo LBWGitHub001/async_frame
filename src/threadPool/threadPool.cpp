@@ -45,7 +45,7 @@ void ThreadPool::join()
                 if (task_thread != nullptr && task_thread->future->valid())
                 {
                     void* result = task_thread->future->get();
-                    free(task_thread->result_ptr);
+                    //free(task_thread->result_ptr);
                 }
                 std::cout << "Released thread " << i << std::endl;
             }
@@ -80,7 +80,7 @@ void ThreadPool::free_push(std::function<void*(int pool_id,int thread_id)>&& tas
 {
 }
 
-void ThreadPool::push(std::function<void*(int pool_id,int thread_id)>&& task)
+void ThreadPool::push(std::function<void*(int pool_id,int thread_id)>&& task,void* tag)
 {
     //分配线程和时间戳
     time_t timestamp = NULL;
@@ -112,10 +112,11 @@ void ThreadPool::push(std::function<void*(int pool_id,int thread_id)>&& task)
     std::unique_ptr<thread_pool::TaskThread> task_thread = std::make_unique<thread_pool::TaskThread>();
     task_thread->future = std::make_unique<std::future<void*>>(std::move(fut));
     task_thread->timestamp = timestamp;
+    task_thread->tag = tag;
     task_threads_[thread_id] = std::move(task_thread);
 }
 
-void ThreadPool::force_push(std::function<void*(int pool_id,int thread_id)>&& task)
+void ThreadPool::force_push(std::function<void*(int pool_id,int thread_id)>&& task,void* tag)
 {
     if (num_busy_ == threadNum_)
     {
@@ -123,27 +124,31 @@ void ThreadPool::force_push(std::function<void*(int pool_id,int thread_id)>&& ta
         resize();
         resize_mtx_.unlock();
     }
-    push(std::move(task));
+    push(std::move(task),tag);
 }
 
-bool ThreadPool::fast_get(void** output)
+bool ThreadPool::fast_get(void** output,void** tag)
 {
-    thread_pool::Result result;
     if (results_.empty())
         return false;
-    result = results_.front();
+    thread_pool::Result result = results_.front();
     results_.pop();
-    //memcpy(output,result.result_ptr,sizeof(Type));
-    *output = result.result_ptr;
+    if (output!=nullptr)
+    {
+        *output = result.result_ptr;
+    }
+    if (tag!=nullptr)
+    {
+        *tag = result.tag;
+    }
     return true;
 }
 
 bool ThreadPool::image_get(cv::Mat& image)
 {
-    thread_pool::Result result;
     if (results_.empty())
         return false;
-    result = results_.front();
+    thread_pool::Result result = results_.front();
     results_.pop();
     image = ((cv::Mat*)result.result_ptr)->clone();
     return true;
@@ -176,8 +181,9 @@ void ThreadPool::release(int thread_id)
             //结果转存到结果队列
             auto fut = task_threads_[thread_id]->future->share();
             void* result_ptr = fut.get();
+            void* tag = task_threads_[thread_id]->tag;
             time_t timestamp = task_threads_[thread_id]->timestamp;
-            thread_pool::Result result{.result_ptr=result_ptr,.timestamp=timestamp};
+            thread_pool::Result result(result_ptr,tag,timestamp);
             results_.push(result);
             //空出线程，其他线程也
             task_threads_[thread_id] = nullptr;
@@ -185,29 +191,33 @@ void ThreadPool::release(int thread_id)
             // std::cout << "Thread " << thread_id << " released" << std::endl;
             break;
         }
-        // if (try_count>=try_freq*2)//等待时间过长
-        // {
-        //     release_mtx_.lock();//防止同样的内容被执行两边
-        //     if (id_seq_.front() == thread_id_first)
-        //         id_seq_.pop();
-        //     else
-        //         continue;
-        //     release_mtx_.unlock();
-        //     //强制将该线程从线程池中移除，这可能导致资源的错误泄漏
-        //     //TODO 检查这里的资源泄漏问题
-        //     //delete task_threads_[thread_id_first];
-        //     auto fut = std::move(task_threads_[thread_id_first]->future);
-        //     task_threads_[thread_id_first] = nullptr;
-        //     auto stop = fut->get();
-        //     delete stop;
-        //     std::cout << "************************Thread " << thread_id << " released Forcely********************" << std::endl;
-        //     try_count=0;
-        //     continue;
-        // }
-        // if (thread_id_first != id_seq_.front())//检测到队列更新，重置等待信息
-        // {
-        //     try_count = 0;
-        // }
+        if (ForceClose_)
+        {
+            if (try_count>=try_freq*2)//等待时间过长
+        {
+            release_mtx_.lock();//防止同样的内容被执行两边
+            if (id_seq_.front() == thread_id_first)
+                id_seq_.pop();
+            else
+                continue;
+            release_mtx_.unlock();
+            //强制将该线程从线程池中移除，这可能导致资源的错误泄漏
+            //TODO 检查这里的资源泄漏问题
+            //delete task_threads_[thread_id_first];
+            auto fut = std::move(task_threads_[thread_id_first]->future);
+            task_threads_[thread_id_first] = nullptr;
+            auto stop = fut->get();
+            delete stop;
+            std::cout << "************************Thread " << thread_id << " released Forcely********************" << std::endl;
+            try_count=0;
+            continue;
+        }
+        if (thread_id_first != id_seq_.front())//检测到队列更新，重置等待信息
+        {
+            try_count = 0;
+        }
+        }
+
         std::this_thread::sleep_for(std::chrono::milliseconds(MIN_PUSH_DELAY_ms/try_freq));
         try_count++;
     }

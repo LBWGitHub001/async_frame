@@ -48,10 +48,23 @@ public:
     void setClear(std::function<void(void*)> func);
 
     /*!
+     * @brief 设置停止线程的阈值时间
+     * @param time_ms 强制停止线程阈值时间
+     * @attention 这个时间需要严谨设置
+     */
+    void setNoResponseThere(int time_ms){MIN_PUSH_DELAY_ms = time_ms;ForcecLoseTurnON();}
+
+    /*!
+     * @brief 开启线程监管,强制释放疑似未响应线程
+     * @attention 不稳定，应该搭配setNoResponseThere使用
+     */
+    void ForcecLoseTurnON(){ForceClose_ = true;}
+
+    /*!
      * @brief 创建一个任务，并将其推入池,如果池中没有空闲线程，将会阻塞
      * @param task 任务，接受两个参数pool_id,thread_id,用来访问静态内存，并且作为线程的唯一标识符
      */
-    void push(std::function<void*(int pool_id,int thread_id)>&& task);
+    void push(std::function<void*(int pool_id,int thread_id)>&& task,void* tag = nullptr);
 
     /*!
      * 无锁推入,需要保证调用环境线程安全
@@ -63,7 +76,7 @@ public:
      * @brief 强制推入，如果没有空闲线程就会创建一个空闲线程，强行开始任务，不阻塞
      * @param task 任务，参数如上
      */
-    void force_push(std::function<void*(int pool_id,int thread_id)>&& task);
+    void force_push(std::function<void*(int pool_id,int thread_id)>&& task,void* tag = nullptr);
 
     /*!
      * @brief 获取线程运算结果,遵守FIFO顺序,不阻塞,深拷贝值
@@ -71,16 +84,33 @@ public:
      * @param output 传入一个结果的指针
      * @return 返回一个布尔值,当获取成功时为true,获取失败时,为false,不阻塞
      */
-    template <typename Type>
-    bool get(Type** output)
+    template <typename Type,class tagType = nullptr_t>
+    bool get(Type** output,void** tag = nullptr)
     {
-        thread_pool::Result result;
         if (results_.empty())
             return false;
-        result = results_.front();
+        thread_pool::Result result = results_.front();
         results_.pop();
-        memcpy(*output,result.result_ptr,sizeof(Type));
-        delete static_cast<Type*>(result.result_ptr);
+        if (result.result_ptr!=nullptr)
+        {
+            *output = new Type;
+            memcpy(*output,result.result_ptr,sizeof(Type));
+            delete static_cast<Type*>(result.result_ptr);
+        }
+        else
+        {
+            *output = nullptr;
+        }
+        if (tag != nullptr)
+        {
+            *tag = new tagType;
+            memcpy(*tag,result.tag,sizeof(tagType));
+            delete static_cast<tagType*>(result.tag);
+        }
+        else
+        {
+            *tag = nullptr;
+        }
         return true;
     }
 
@@ -89,7 +119,7 @@ public:
      * @param output 同上
      * @return 同上
      */
-    bool fast_get(void** output);
+    bool fast_get(void** output,void** tag = nullptr);
 
     /*!
      * 如果运算结果是cv::Mat,则需要调用这个方法获取结果,否则将会造成内存泄漏的风险
@@ -175,6 +205,7 @@ private:
     void release(int thread_id);
     std::mutex release_mtx_;
     std::function<void(void*)> clearStaticMem_func_;
+    bool ForceClose_ = false;
 
     //id信息
     inline void* get_staticMem_ptr(int thread_id);

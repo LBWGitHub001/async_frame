@@ -14,11 +14,13 @@ namespace thread_pool
     {
         std::unique_ptr<std::future<void*>> future = nullptr;
         time_t timestamp = 1e10;
-        void* result_ptr = nullptr;
+        // void* result_ptr = nullptr;
+        void* tag = nullptr;
 
         ~TaskThread()
         {
-            result_ptr = nullptr;
+            // result_ptr = nullptr;
+            tag = nullptr;
         }
     };
 
@@ -34,13 +36,19 @@ namespace thread_pool
     struct Result
     {
         void* result_ptr = nullptr;
+        void* tag = nullptr;
         time_t timestamp = 1e10;
 
         Result& operator=(Result& other)
         {
             result_ptr = other.result_ptr;
+            tag = other.tag;
             timestamp = other.timestamp;
+            return *this;
         }
+        Result(void* result_ptr, void* tag, time_t timestamp):
+        result_ptr(result_ptr),tag(tag),timestamp(timestamp)
+        {}
     };
 
     struct threadBinding
