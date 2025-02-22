@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(AsyncInferFrame)
+project(async_frame)
 
 # Default to C++17
 if (NOT CMAKE_CXX_STANDARD)
@@ -7,7 +7,7 @@ if (NOT CMAKE_CXX_STANDARD)
 endif ()
 
 if (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    add_compile_options(-Wall -Wextra -Wpedantic)
+    add_compile_options(-Wall -Wextra -Wpedantic -O3)
 endif ()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
@@ -16,10 +16,10 @@ include(Function)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # find package
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
 find_package(OpenCV 4 REQUIRED)
 find_package(OpenVINO REQUIRED COMPONENTS Runtime ONNX)
-find_package(Boost REQUIRED)
-
 #cuda
 find_package(CUDA REQUIRED)
 if (CUDA_FOUND)
@@ -34,14 +34,30 @@ if (CUDA_FOUND)
     print_var(CUDA_LIB_DIR)
     include_directories(${CUDA_INCLUDE_DIRS} ${TensorRT_INCLUDE_DIRS})
     add_definitions(-DTRT)
+    ament_export_definitions(TRT)
     #get_filename_component(CUDA_LIB_DIR ${CUDA_LIBRARIES} DIRECTORY)
 endif ()
+
 # include
 include_directories(include)
+
+# include
+include_directories(include)
+
+#Add&Compile source
 file(GLOB_RECURSE LIB_SRC src/inferer/*.cpp src/threadPool/*.cpp)
 add_library(${PROJECT_NAME} SHARED ${LIB_SRC})
-target_include_directories(${PROJECT_NAME} PUBLIC ${OpenCV_INCLUDE_DIRS} ${CERES_INCLUDE_DIRS})
 
+set(dependencies
+        rclcpp
+        rcpputils
+        OpenCV
+)
+
+#Link libs
+ament_target_dependencies(${PROJECT_NAME} ${dependencies})
+target_include_directories(${PROJECT_NAME} PUBLIC
+        ${OpenCV_INCLUDE_DIRS} ${CERES_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME}
         ${OpenCV_LIBS}
         openvino::frontend::onnx openvino::runtime)
@@ -57,12 +73,27 @@ install(DIRECTORY include/
         DESTINATION include
 )
 
-##########################################################################
-add_executable(test src/test.cpp)
-target_link_libraries(test
-        ${PROJECT_NAME})
+# Install libraries
+install(TARGETS ${PROJECT_NAME}
+        EXPORT ${PROJECT_NAME}
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        RUNTIME DESTINATION bin
+        INCLUDES DESTINATION include
+)
 
-add_executable(testTP testThreadPool.cpp)
-target_link_libraries(testTP
-        ${PROJECT_NAME})
-##########################################################################
+# export lib lib
+ament_export_targets(${PROJECT_NAME} HAS_LIBRARY_TARGET)
+
+# test
+if(BUILD_TESTING)
+    find_package(ament_lint_auto REQUIRED)
+    list(APPEND AMENT_LINT_AUTO_EXCLUDE
+            ament_cmake_copyright
+            ament_cmake_uncrustify
+            ament_cmake_cpplint
+    )
+    ament_lint_auto_find_test_dependencies()
+endif()
+
+ament_package()

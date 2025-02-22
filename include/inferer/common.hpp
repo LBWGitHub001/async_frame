@@ -60,7 +60,29 @@ public:
         std::cerr << msg << std::endl;
     }
 };
+#endif
 
+
+
+#ifndef TRT
+namespace nvinfer1
+{
+    class Dims
+    {
+    public:
+        //! The maximum rank (number of dimensions) supported for a tensor.
+        static constexpr int32_t MAX_DIMS{8};
+
+        //! The rank (number of dimensions).
+        int32_t nbDims;
+
+        //! The extent of each dimension.
+        int64_t d[MAX_DIMS];
+    };
+}
+#endif
+
+#ifdef TRT
 inline int get_size_by_dims(const nvinfer1::Dims& dims)
 {
     int size = 1;
@@ -87,6 +109,24 @@ inline int type_to_size(const nvinfer1::DataType& dataType)
         return 1;
     default:
         return 4;
+    }
+}
+
+
+inline int type_to_CVtype(const nvinfer1::DataType& dataType)
+{
+    switch (dataType)
+    {
+    case nvinfer1::DataType::kFLOAT:
+        return CV_32F;
+    case nvinfer1::DataType::kHALF:
+        return CV_16F;
+    case nvinfer1::DataType::kINT32:
+        return CV_32S;
+    case nvinfer1::DataType::kINT8:
+        return CV_8S;
+    default:
+        return CV_32F;
     }
 }
 #endif
@@ -152,46 +192,11 @@ inline int type_to_CVtype(const ov::element::Type& dataType)
     }
 }
 
-inline int type_to_CVtype(const nvinfer1::DataType& dataType)
-{
-    switch (dataType)
-    {
-    case nvinfer1::DataType::kFLOAT:
-        return CV_32F;
-    case nvinfer1::DataType::kHALF:
-        return CV_16F;
-    case nvinfer1::DataType::kINT32:
-        return CV_32S;
-    case nvinfer1::DataType::kINT8:
-        return CV_8S;
-    default:
-        return CV_32F;
-    }
-}
 
 inline static float clamp(float val, float min, float max)
 {
     return val > min ? (val < max ? val : max) : min;
 }
-
-#ifndef TRT
-namespace nvinfer1
-{
-    class Dims
-    {
-    public:
-        //! The maximum rank (number of dimensions) supported for a tensor.
-        static constexpr int32_t MAX_DIMS{8};
-
-        //! The rank (number of dimensions).
-        int32_t nbDims;
-
-        //! The extent of each dimension.
-        int64_t d[MAX_DIMS];
-    };
-}
-#endif
-
 
 namespace det
 {
