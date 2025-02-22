@@ -143,6 +143,9 @@ public:
     {
         result_delay_ = time;
     }
+
+    inline std::vector<det::Binding> get_inputShape(){return input_bindings_;}
+    inline std::vector<det::Binding> get_outputShape(){return output_bindings_;}
 private:
     /*!
      * @brife 转存NN网络接口
