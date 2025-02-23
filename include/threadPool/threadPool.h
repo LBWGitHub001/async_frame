@@ -170,6 +170,24 @@ public:
     }
 
     /*!
+       * @brief 向静态内存中放入一个指针
+       * @param pool_id 池id
+       * @param thread_id 线程id
+       * @param ptr 指向一个空间的指针
+       * @return 布尔值
+       */
+    static bool try_to_alloc_static(int pool_id,int thread_id,void* ptr)
+    {
+        auto& staticMem = pools_ptr_[pool_id]->static_memory_vector_[thread_id];
+        if (staticMem == nullptr)
+        {
+            staticMem = ptr;
+            return true;
+        }
+        return false;
+    }
+
+    /*!
      * @brief 释放静态内存空间
      * @param pool_id 池id
      * @param thread_id 线程id
