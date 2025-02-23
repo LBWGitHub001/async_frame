@@ -26,7 +26,7 @@ typedef struct
     long timestamp;
 } Task;
 
-template <class _Infer>
+template <class _Infer,class _Result = void*,class _Tag = void*>
 class AsyncInferer
 {
 public:
@@ -116,14 +116,14 @@ public:
         {
             void* input = get_input(input_bindings_);
             void* ptr;
-            if (!ThreadPool::try_to_malloc_static<_Infer>(pool_id, thread_id, infer_.get()) && !get_staticMem_ptr(
-                pool_id, thread_id, &ptr))
+            if (!ThreadPool<_Result,_Tag>::template try_to_malloc_static<_Infer>(pool_id, thread_id, infer_.get())
+                && !ThreadPool<_Result,_Tag>::get_staticMem_ptr(pool_id, thread_id, &ptr))
             {
                 std::cout << "Failed to allocate memory for pool " << pool_id << " thread " << thread_id << std::endl;
                 throw std::runtime_error("Failed to allocate static memory for pool");
                 return nullptr;
             }
-            get_staticMem_ptr(pool_id, thread_id, &ptr);
+            ThreadPool<_Result,_Tag>::get_staticMem_ptr(pool_id, thread_id, &ptr);
             _Infer* infer = (_Infer*)ptr;
             infer->copy_from_data(input);
             infer->infer();
@@ -166,7 +166,7 @@ private:
     std::shared_ptr<_Infer> infer_;
     std::function<void*(std::vector<void*>&, std::vector<det::Binding>&,void*)> post_function_;
     //线程管理
-    ThreadPool thread_pool_;
+    ThreadPool<_Result,_Tag> thread_pool_;
     //结果管理
     int result_delay_ = 100;
     bool result_start_ = true;
@@ -180,7 +180,7 @@ private:
         while (result_start_)
         {
             void* output;
-            if (thread_pool_.fast_get(&output))
+            if (thread_pool_.fast_get(output))
             {
                 callback_(output);
                 free(output);
