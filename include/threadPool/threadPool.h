@@ -61,22 +61,25 @@ public:
     void ForcecLoseTurnON(){ForceClose_ = true;}
 
     /*!
-     * @brief 创建一个任务，并将其推入池,如果池中没有空闲线程，将会阻塞
-     * @param task 任务，接受两个参数pool_id,thread_id,用来访问静态内存，并且作为线程的唯一标识符
+     * @brief 创建一个任务,并将其推入池,如果池中没有空闲线程,将会阻塞
+     * @param task 任务,接受两个参数pool_id,thread_id,用来访问静态内存，并且作为线程的唯一标识符
+     * @param tag 静态传递量,该量在任务运行过程中不会修改,可以在获取答案时获取使用,默认是nullptr
+     * @param delay_us 延时，新线程运行一段时间后，将会析构传参时的栈内存,必要时填写该参数保证信息传递完成,默认是0
      */
-    void push(std::function<void*(int pool_id,int thread_id)>&& task,void* tag = nullptr);
+    void push(std::function<void*(int pool_id,int thread_id)>&& task,void* tag = nullptr,int delay_us = 0);
 
     /*!
      * 无锁推入,需要保证调用环境线程安全
      * @param task 任务，参数同上
      */
+    [[deprecated("未完成")]]
     void free_push(std::function<void*(int pool_id,int thread_id)>&& task);
 
     /*!
      * @brief 强制推入，如果没有空闲线程就会创建一个空闲线程，强行开始任务，不阻塞
      * @param task 任务，参数如上
      */
-    void force_push(std::function<void*(int pool_id,int thread_id)>&& task,void* tag = nullptr);
+    void force_push(std::function<void*(int pool_id,int thread_id)>&& task,void* tag = nullptr,int delay_us = 0);
 
     /*!
      * @brief 获取线程运算结果,遵守FIFO顺序,不阻塞,深拷贝值

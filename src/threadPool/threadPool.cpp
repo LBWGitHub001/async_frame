@@ -80,7 +80,7 @@ void ThreadPool::free_push(std::function<void*(int pool_id,int thread_id)>&& tas
 {
 }
 
-void ThreadPool::push(std::function<void*(int pool_id,int thread_id)>&& task,void* tag)
+void ThreadPool::push(std::function<void*(int pool_id,int thread_id)>&& task,void* tag,int delay_us)
 {
     //分配线程和时间戳
     time_t timestamp = NULL;
@@ -107,6 +107,7 @@ void ThreadPool::push(std::function<void*(int pool_id,int thread_id)>&& task,voi
         return result;
     });
 
+    std::this_thread::sleep_for(std::chrono::microseconds(delay_us));
     //存入线程池
     id_seq_.push(thread_id); //存储当前线程
     std::unique_ptr<thread_pool::TaskThread> task_thread = std::make_unique<thread_pool::TaskThread>();
@@ -116,7 +117,7 @@ void ThreadPool::push(std::function<void*(int pool_id,int thread_id)>&& task,voi
     task_threads_[thread_id] = std::move(task_thread);
 }
 
-void ThreadPool::force_push(std::function<void*(int pool_id,int thread_id)>&& task,void* tag)
+void ThreadPool::force_push(std::function<void*(int pool_id,int thread_id)>&& task,void* tag,int delay_us)
 {
     if (num_busy_ == threadNum_)
     {
@@ -124,7 +125,7 @@ void ThreadPool::force_push(std::function<void*(int pool_id,int thread_id)>&& ta
         resize();
         resize_mtx_.unlock();
     }
-    push(std::move(task),tag);
+    push(std::move(task),tag,delay_us);
 }
 
 bool ThreadPool::fast_get(void** output,void** tag)
