@@ -52,13 +52,17 @@ public:
      * @param time_ms 强制停止线程阈值时间
      * @attention 这个时间需要严谨设置
      */
-    void setNoResponseThere(int time_ms){MIN_PUSH_DELAY_ms = time_ms;ForcecLoseTurnON();}
+    void setNoResponseThere(int time_ms)
+    {
+        MIN_PUSH_DELAY_ms = time_ms;
+        ForcecLoseTurnON();
+    }
 
     /*!
      * @brief 开启线程监管,强制释放疑似未响应线程
      * @attention 不稳定，应该搭配setNoResponseThere使用
      */
-    void ForcecLoseTurnON(){ForceClose_ = true;}
+    void ForcecLoseTurnON() { ForceClose_ = true; }
 
     /*!
      * @brief 创建一个任务,并将其推入池,如果池中没有空闲线程,将会阻塞
@@ -66,20 +70,20 @@ public:
      * @param tag 静态传递量,该量在任务运行过程中不会修改,可以在获取答案时获取使用,默认是nullptr
      * @param delay_us 延时，新线程运行一段时间后，将会析构传参时的栈内存,必要时填写该参数保证信息传递完成,默认是0
      */
-    void push(std::function<void*(int pool_id,int thread_id)>&& task,void* tag = nullptr,int delay_us = 0);
+    void push(std::function<void*(int pool_id, int thread_id)>&& task, void* tag = nullptr, int delay_us = 0);
 
     /*!
      * 无锁推入,需要保证调用环境线程安全
      * @param task 任务，参数同上
      */
     [[deprecated("未完成")]]
-    void free_push(std::function<void*(int pool_id,int thread_id)>&& task);
+    void free_push(std::function<void*(int pool_id, int thread_id)>&& task);
 
     /*!
      * @brief 强制推入，如果没有空闲线程就会创建一个空闲线程，强行开始任务，不阻塞
      * @param task 任务，参数如上
      */
-    void force_push(std::function<void*(int pool_id,int thread_id)>&& task,void* tag = nullptr,int delay_us = 0);
+    void force_push(std::function<void*(int pool_id, int thread_id)>&& task, void* tag = nullptr, int delay_us = 0);
 
     /*!
      * @brief 获取线程运算结果,遵守FIFO顺序,不阻塞,深拷贝值
@@ -87,17 +91,17 @@ public:
      * @param output 传入一个结果的指针
      * @return 返回一个布尔值,当获取成功时为true,获取失败时,为false,不阻塞
      */
-    template <typename Type,class tagType = nullptr_t>
-    bool get(Type** output,void** tag = nullptr)
+    template <typename Type, class tagType = nullptr_t>
+    bool get(Type** output, void** tag = nullptr)
     {
         if (results_.empty())
             return false;
         thread_pool::Result result = results_.front();
         results_.pop();
-        if (result.result_ptr!=nullptr)
+        if (result.result_ptr != nullptr)
         {
             *output = new Type;
-            memcpy(*output,result.result_ptr,sizeof(Type));
+            memcpy(*output, result.result_ptr, sizeof(Type));
             delete static_cast<Type*>(result.result_ptr);
         }
         else
@@ -107,7 +111,7 @@ public:
         if (tag != nullptr)
         {
             *tag = new tagType;
-            memcpy(*tag,result.tag,sizeof(tagType));
+            memcpy(*tag, result.tag, sizeof(tagType));
             delete static_cast<tagType*>(result.tag);
         }
         else
@@ -122,7 +126,7 @@ public:
      * @param output 同上
      * @return 同上
      */
-    bool fast_get(void** output,void** tag = nullptr);
+    bool fast_get(void** output, void** tag = nullptr);
 
     /*!
      * 如果运算结果是cv::Mat,则需要调用这个方法获取结果,否则将会造成内存泄漏的风险
@@ -149,7 +153,7 @@ public:
      * @param ptr 提取的静态内存的指针
      * @return 布尔值,如果已经被分配,返回true,否则返回false
      */
-    friend bool get_staticMem_ptr(int pool_id, int thread_id,void** ptr);
+    friend bool get_staticMem_ptr(int pool_id, int thread_id, void** ptr);
 
     /*!
      * @brief 在线程静态内存空间中申请一块空间
@@ -160,7 +164,7 @@ public:
      * @return 布尔值,如果完成分配,返回true,否则,说明此空间上存在内容,先释放才能再次分配
      */
     template <class _Infer>
-    static bool try_to_malloc_static(int pool_id,int thread_id,_Infer* master)
+    static bool try_to_malloc_static(int pool_id, int thread_id, _Infer* master)
     {
         auto& staticMem = pools_ptr_[pool_id]->static_memory_vector_[thread_id];
         if (staticMem != nullptr)
@@ -176,7 +180,7 @@ public:
        * @param ptr 指向一个空间的指针
        * @return 布尔值
        */
-    static bool try_to_alloc_static(int pool_id,int thread_id,void* ptr)
+    static bool try_to_alloc_static(int pool_id, int thread_id, void* ptr)
     {
         auto& staticMem = pools_ptr_[pool_id]->static_memory_vector_[thread_id];
         if (staticMem == nullptr)
@@ -193,7 +197,7 @@ public:
      * @param thread_id 线程id
      * @return 布尔值,释放成功为true,否则,说明此处原来没有没分配,返回false
      */
-    static bool try_to_free_static(int pool_id,int thread_id)
+    static bool try_to_free_static(int pool_id, int thread_id)
     {
         auto& staticMem = pools_ptr_[pool_id]->static_memory_vector_[thread_id];
         if (staticMem == nullptr)
@@ -247,7 +251,10 @@ inline bool get_staticMem_ptr(int pool_id, int thread_id, void** ptr)
     if (pool_ptr != nullptr)
     {
         *ptr = pool_ptr->get_staticMem_ptr(thread_id);
-        return true;
+        if (*ptr != nullptr)
+            return true;
+        else
+            return false;
     }
     return false;
 }
