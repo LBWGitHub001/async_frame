@@ -97,7 +97,8 @@ if(BUILD_TESTING)
 endif()
 
 ############################################33
-#add_executable(testH test.cpp)
+add_executable(testH test.cpp src/threadPool/threadPool.cpp)
+target_link_libraries(testH ${OpenCV_LIBS})
 #target_link_libraries(testH ${PROJECT_NAME})
 ###############################################3
 ament_package()

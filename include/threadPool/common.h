@@ -7,21 +7,25 @@
 #include "threadPool/check.h"
 #include <future>
 
-
 namespace thread_pool
 {
+    template<class _Result,class _Tag>
     struct TaskThread
     {
-        std::unique_ptr<std::future<void*>> future = nullptr;
+        std::unique_ptr<std::future<_Result>> future = nullptr;
         time_t timestamp = 1e10;
-        // void* result_ptr = nullptr;
-        void* tag = nullptr;
+        _Result result;
+        _Tag tag;
 
-        ~TaskThread()
-        {
-            // result_ptr = nullptr;
-            tag = nullptr;
-        }
+    };
+
+    template<class _Result,class _Tag>
+    struct Result
+    {
+        time_t timestamp = 1e10;
+        _Result result;
+        _Tag tag;
+        Result(time_t timestamp, _Result result, _Tag tag) :timestamp(timestamp), result(result), tag(tag) {}
     };
 
     template <class _Static = nullptr_t>
@@ -31,24 +35,6 @@ namespace thread_pool
         time_t timestamp = 1e10;
         void* result_ptr = nullptr;
         _Static infer;
-    };
-
-    struct Result
-    {
-        void* result_ptr = nullptr;
-        void* tag = nullptr;
-        time_t timestamp = 1e10;
-
-        Result& operator=(Result& other)
-        {
-            result_ptr = other.result_ptr;
-            tag = other.tag;
-            timestamp = other.timestamp;
-            return *this;
-        }
-        Result(void* result_ptr, void* tag, time_t timestamp):
-        result_ptr(result_ptr),tag(tag),timestamp(timestamp)
-        {}
     };
 
     struct threadBinding
