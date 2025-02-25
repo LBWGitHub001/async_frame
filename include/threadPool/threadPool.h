@@ -27,12 +27,12 @@ public:
     /*!
      * @brief 构造函数，启动所有服务
      */
-    explicit ThreadPool()
+    explicit ThreadPool(int threadNum)
     {
         pools_count_++;
         pool_id_ = pools_count_ - 1;
         pools_ptr_.push_back(this);
-        threadNum_ = 8;
+        threadNum_ = threadNum;
         ptr_ = 0;
         num_busy_ = 0;
         for (auto i = 0; i < threadNum_; ++i)
