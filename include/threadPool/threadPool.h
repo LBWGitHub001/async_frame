@@ -153,7 +153,7 @@ public:
             std::thread end(&ThreadPool::release, this, thread_id);
             end.detach();
             --num_busy_;
-            std::cout << "Thread " << thread_id << " Free" << std::endl;
+            // std::cout << "Thread " << thread_id << " Free" << std::endl;
             std::this_thread::sleep_for(std::chrono::microseconds(100));
             return result;
         });
