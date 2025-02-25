@@ -220,6 +220,8 @@ public:
         thread_pool::Result result = results_.front();
         results_.pop();
         output = result.result;
+        if (tag == nullptr)
+            return true;
         tag = result.tag;
         return true;
     }
