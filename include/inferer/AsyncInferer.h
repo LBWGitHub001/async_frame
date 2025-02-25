@@ -164,7 +164,7 @@ private:
     std::string device_path;
     //推理器管理
     std::shared_ptr<_Infer> infer_;
-    std::function<void*(std::vector<void*>&, std::vector<det::Binding>&,_Tag)> post_function_;
+    std::function<_Result(std::vector<void*>&, std::vector<det::Binding>&,_Tag)> post_function_;
     //线程管理
     ThreadPool<_Result,_Tag> thread_pool_;
     //结果管理
