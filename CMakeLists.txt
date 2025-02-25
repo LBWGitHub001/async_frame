@@ -96,9 +96,9 @@ if(BUILD_TESTING)
     ament_lint_auto_find_test_dependencies()
 endif()
 
-############################################33
-add_executable(testH test.cpp src/threadPool/threadPool.cpp src/inferer/AsyncInferer.cpp)
-target_link_libraries(testH ${OpenCV_LIBS})
-target_link_libraries(testH ${PROJECT_NAME})
-###############################################3
+#############################################33
+#add_executable(testH test.cpp src/threadPool/threadPool.cpp src/inferer/AsyncInferer.cpp)
+#target_link_libraries(testH ${OpenCV_LIBS})
+#target_link_libraries(testH ${PROJECT_NAME})
+################################################3
 ament_package()
