@@ -179,7 +179,7 @@ public:
      * @brief 强制推入，如果没有空闲线程就会创建一个空闲线程，强行开始任务，不阻塞
      * @param task 任务，参数如上
      */
-    void force_push(std::function<void*(int pool_id, int thread_id)>&& task, void* tag = nullptr, int delay_us = 0)
+    void force_push(std::function<_Result(int pool_id, int thread_id)>&& task, _Tag tag = nullptr, int delay_us = 0)
     {
         if (num_busy_ == threadNum_)
         {
