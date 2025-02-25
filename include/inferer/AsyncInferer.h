@@ -166,7 +166,7 @@ private:
     std::shared_ptr<_Infer> infer_;
     std::function<_Result(std::vector<void*>&, std::vector<det::Binding>&,_Tag&)> post_function_;
     //线程管理
-    ThreadPool<_Result,_Tag> thread_pool_;
+    ThreadPool<_Result&,_Tag&> thread_pool_;
     //结果管理
     int result_delay_ = 100;
     bool result_start_ = true;
