@@ -39,9 +39,10 @@ public:
         std::thread th(&AsyncInferer::result_loop, this);
         th.detach();
 
-        thread_pool_.setClear([](_Infer* infer)
+        thread_pool_.setClear([](void* infer)
         {
-            delete infer;
+            auto *infer_ptr = static_cast<_Infer*>(infer);
+            delete infer_ptr;
         });
     }
 
