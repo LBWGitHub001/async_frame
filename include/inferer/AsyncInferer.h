@@ -79,7 +79,7 @@ public:
      * @brief 注册后处理函数，推理器完成推理后调用
      * @param postprocess 后处理函数，接受三个参数，(原始数据,NN输出层形状,tag)
      */
-    void registerPostprocess(std::function<void*(std::vector<void*>&, std::vector<det::Binding>&,_Tag*)> postprocess)
+    void registerPostprocess(std::function<_Result(std::vector<void*>&, std::vector<det::Binding>&,_Tag&)> postprocess)
     {
         post_function_ = std::move(postprocess);
         std::cout << "Registering callback function" << std::endl;
@@ -164,7 +164,7 @@ private:
     std::string device_path;
     //推理器管理
     std::shared_ptr<_Infer> infer_;
-    std::function<_Result(std::vector<void*>&, std::vector<det::Binding>&,_Tag)> post_function_;
+    std::function<_Result(std::vector<void*>&, std::vector<det::Binding>&,_Tag&)> post_function_;
     //线程管理
     ThreadPool<_Result,_Tag> thread_pool_;
     //结果管理
