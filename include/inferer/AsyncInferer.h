@@ -183,7 +183,7 @@ private:
             if (thread_pool_.fast_get(output, tag))
             {
                 callback_(output, tag);
-                free(output);
+                //free(output);
             }
             else
             {

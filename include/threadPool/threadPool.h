@@ -213,15 +213,13 @@ public:
      * @param output 同上
      * @return 同上
      */
-    bool fast_get(_Result& output, _Tag& tag = nullptr)
+    bool fast_get(_Result& output, _Tag& tag)
     {
         if (results_.empty())
             return false;
         thread_pool::Result result = results_.front();
         results_.pop();
         output = result.result;
-        if (tag == nullptr)
-            return true;
         tag = result.tag;
         return true;
     }
