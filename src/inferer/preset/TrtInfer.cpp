@@ -1,11 +1,10 @@
 //
 // Created by lbw on 25-2-14.
 //
+#ifdef TRT
 
 #include "inferer/preset/TrtInfer.h"
 
-
-#ifdef TRT
 namespace fs = ghc::filesystem;
 
 TrtInfer::TrtInfer(const std::string& model_path,bool is_warmup, const std::string& device_name)

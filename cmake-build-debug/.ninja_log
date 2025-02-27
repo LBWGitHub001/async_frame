@@ -1,0 +1,16 @@
+# ninja log v6
+2087	2205	1740630533332980781	libasync_frame.so	280c7561c2353d02
+3	2086	1740630531248923818	CMakeFiles/async_frame.dir/src/inferer/preset/VinoInfer.cpp.o	5107a6c836f705ff
+3	1636	1740630531248923818	CMakeFiles/async_frame.dir/src/inferer/preset/TrtInfer.cpp.o	f827d133ef33b757
+3	1915	1740630531248923818	CMakeFiles/async_frame.dir/src/inferer/AsyncInferer.cpp.o	b81e0b972dc6d6d8
+2	390	1740630812775615054	build.ninja	38d1442f433b6cb
+3	1731	1740630531248923818	CMakeFiles/async_frame.dir/src/inferer/preset/ppp.cpp.o	b7d4e2d19ff83c32
+4	1707	1740630531249923846	CMakeFiles/async_frame.dir/src/threadPool/threadPool.cpp.o	62215578ff7cd498
+3	1643	1740630531248923818	CMakeFiles/async_frame.dir/src/inferer/preset/InferBase.cpp.o	96f6a9b76f7ee3fb
+4	1750	1740631102287395020	CMakeFiles/async_frame.dir/src/inferer/preset/InferBase.cpp.o	cc40dd291a075411
+5	2014	1740631102288394979	CMakeFiles/async_frame.dir/src/threadPool/threadPool.cpp.o	c2fc2f909ab23162
+5	2014	1740631102288394979	CMakeFiles/async_frame.dir/src/inferer/preset/ppp.cpp.o	981fb18ed57c20b9
+4	2015	1740631102287395020	CMakeFiles/async_frame.dir/src/inferer/preset/TrtInfer.cpp.o	942f4d45430017ab
+3	2015	1740631102286395061	CMakeFiles/async_frame.dir/src/inferer/AsyncInferer.cpp.o	242e5c1ebe73e71
+4	2168	1740631102287395020	CMakeFiles/async_frame.dir/src/inferer/preset/VinoInfer.cpp.o	fd83e86be0f1ec24
+2168	2311	1740631104451306733	libasync_frame.so	280c7561c2353d02

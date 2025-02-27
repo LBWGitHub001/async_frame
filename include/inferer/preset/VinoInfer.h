@@ -5,6 +5,7 @@
 #ifndef VINOINFER_H
 #define VINOINFER_H
 
+#ifdef VINO
 #include "inferer/preset/InferBase.h"
 #include "threadPool/memBlock.h"
 
@@ -42,6 +43,6 @@ private:
 
     bool is_dynamic_ = false;
 };
-
+#endif
 
 #endif //VINOINFER_H

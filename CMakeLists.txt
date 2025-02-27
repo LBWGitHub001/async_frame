@@ -19,30 +19,27 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(OpenCV 4 REQUIRED)
-find_package(OpenVINO REQUIRED COMPONENTS Runtime ONNX)
-#cuda
-find_package(CUDA REQUIRED)
-if (CUDA_FOUND)
-    message(STATUS "CUDA is Found")
-    find_package(TensorRT REQUIRED)
-    set(CMAKE_CUDA_ARCHITECTURES 60 61 62 70 72 75 86 89 90)
-    set(CMAKE_CUDA_COMPILER /usr/local/cuda/bin/nvcc)
-    print_var(CUDA_LIBRARIES)
-    print_var(CUDA_INCLUDE_DIRS)
-    print_var(TensorRT_INCLUDE_DIRS)
-    print_var(TensorRT_LIBRARIES)
-    print_var(CUDA_LIB_DIR)
-    include_directories(${CUDA_INCLUDE_DIRS} ${TensorRT_INCLUDE_DIRS})
+find_package(cross_platform REQUIRED)
+
+include(${cross_platform_DIR}/cross_platformConfig.cmake)
+message(STATUS CUDA:${CUDA_AVAILABLE})
+message(STATUS TensonrRT:${TensorRT_AVAILABLE})
+message(STATUS OpenVINO:${OpenVINO_AVAILABLE})
+
+if (${OpenVINO_AVAILABLE})
+    find_package(OpenVINO REQUIRED COMPONENTS Runtime ONNX)
+    add_definitions(-DVINO)
+endif ()
+
+if(${TensorRT_AVAILABLE})
     add_definitions(-DTRT)
-    ament_export_definitions(TRT)
-    #get_filename_component(CUDA_LIB_DIR ${CUDA_LIBRARIES} DIRECTORY)
 endif ()
 
 # include
 include_directories(include)
-
-# include
-include_directories(include)
+if (${CUDA_AVAILABLE})
+    include_directories(${CUDA_INCLUDE_DIRS} ${TensorRT_INCLUDE_DIRS})
+endif ()
 
 #Add&Compile source
 file(GLOB_RECURSE LIB_SRC src/inferer/*.cpp src/threadPool/*.cpp)
@@ -57,12 +54,15 @@ set(dependencies
 #Link libs
 ament_target_dependencies(${PROJECT_NAME} ${dependencies})
 target_include_directories(${PROJECT_NAME} PUBLIC
-        ${OpenCV_INCLUDE_DIRS} ${CERES_INCLUDE_DIRS})
+        ${OpenCV_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME}
-        ${OpenCV_LIBS}
-        openvino::frontend::onnx openvino::runtime)
+        ${OpenCV_LIBS})
 
-if(CUDA_FOUND)
+if (${OpenVINO_AVAILABLE})
+    target_link_libraries(${PROJECT_NAME}
+    openvino::frontend::onnx openvino::runtime)
+endif ()
+if (${CUDA_AVAILABLE})
     target_link_libraries(${PROJECT_NAME}
             ${CUDA_LIBRARIES}
             ${TensorRT_LIBRARIES})
@@ -86,7 +86,7 @@ install(TARGETS ${PROJECT_NAME}
 ament_export_targets(${PROJECT_NAME} HAS_LIBRARY_TARGET)
 
 # test
-if(BUILD_TESTING)
+if (BUILD_TESTING)
     find_package(ament_lint_auto REQUIRED)
     list(APPEND AMENT_LINT_AUTO_EXCLUDE
             ament_cmake_copyright
@@ -94,11 +94,6 @@ if(BUILD_TESTING)
             ament_cmake_cpplint
     )
     ament_lint_auto_find_test_dependencies()
-endif()
+endif ()
 
-#############################################33
-#add_executable(testH test.cpp src/threadPool/threadPool.cpp src/inferer/AsyncInferer.cpp)
-#target_link_libraries(testH ${OpenCV_LIBS})
-#target_link_libraries(testH ${PROJECT_NAME})
-################################################3
 ament_package()

@@ -2,6 +2,7 @@
 // Created by lbw on 25-2-14.
 //
 
+#ifdef VINO
 #include "inferer/preset/VinoInfer.h"
 namespace fs = ghc::filesystem;
 
@@ -252,3 +253,5 @@ std::vector<void*>& VinoInfer::getResult()
     outputs_.push_back(output_tensor.data<float>());
     return outputs_;
 }
+
+#endif

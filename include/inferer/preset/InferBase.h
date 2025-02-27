@@ -5,7 +5,6 @@
 #define INFERBASE_H
 #include <vector>
 #include <string>
-#include <opencv2/opencv.hpp>
 #include "inferer/common.hpp"
 #include "threadPool/memBlock.h"
 

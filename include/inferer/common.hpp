@@ -131,6 +131,7 @@ inline int type_to_CVtype(const nvinfer1::DataType& dataType)
 }
 #endif
 
+#ifdef VINO
 inline int type_to_size(const ov::element::Type& dataType)
 {
     switch (dataType)
@@ -191,7 +192,7 @@ inline int type_to_CVtype(const ov::element::Type& dataType)
     //FYT_ASSERT("this inputType is Incorrect!");
     }
 }
-
+#endif
 
 inline static float clamp(float val, float min, float max)
 {
@@ -241,80 +242,5 @@ enum class InferState
     Accelerate,
 
 };
-
-// class ModelInputBase
-// {
-//     ModelInputBase(int num_inputs): num_inputs(num_inputs)
-//     {
-//     }
-//
-// public:
-//     int num_inputs;
-// };
-// //Output宏
-// #define DECLARE(name,len) float name[len];
-// #define CREATETYPE(unionName,total)     \
-// typedef union unionName{                \
-//     unionName(unionName& obj) {         \
-//     for(int i=0;i<total;i++)            \
-//         {data[i]=obj.data[i];}          \
-//     }                                   \
-//     unionName()=default;                \
-//     struct{                             \
-//     META()                              \
-//     };                                  \
-//     float data[total];                  \
-//     } unionName;                        \
-// constexpr int unionName##_TotalLen_ = total;
-//
-//
-// //Input宏
-// #define MODEL_NORMAL_TENSOR std::vector<float>
-// #define MODEL_IMAGE cv::Mat
-// #define CREATE_MODEL_INPUT(name,num_inputs,...) \
-//     class name:public ModelInputBase{           \
-//     name():ModelInputBase(num_inputs){}         \
-//   __VA_ARGS__                                   \
-// };
-//
-// namespace ModelPrsetIO
-// {
-//     CREATE_MODEL_INPUT(Image, 1,
-//                        MODEL_IMAGE img;
-//     )
-//
-//     CREATE_MODEL_INPUT(Tensor, 1,
-//                        MODEL_NORMAL_TENSOR tensor;
-//     )
-//
-//     #define META() \
-//             DECLARE(id,1) \
-//             DECLARE(num,1) \
-//             DECLARE(bbox,4)
-//         CREATETYPE(OUTPUT_EXAMPLE,10)
-//     #undef META
-//
-//
-// }
-
-//
-// #define Create_Output(name,len,...) \
-// float name[len];\
-// CREATE_OUTPUT_LARYER_1(__VA_ARGS__)
-//
-// #define CREATE_OUTPUT_LARYER_1(name,len,...)\
-// float name[len];\
-// CREATE_OUTPUT_LARYER_2(__VA_ARGS__)
-//
-// #define CREATE_OUTPUT_LARYER_2(name,len,...)\
-// float name[len];\
-// CREATE_OUTPUT_LARYER_3(__VA_ARGS__)
-//
-// #define CREATE_OUTPUT_LARYER_3(name,len,...)\
-// float name[len];\
-// CREATE_OUTPUT_LARYER_4(__VA_ARGS__)
-//
-// Create_Output(a,1,b,2,c,3)
-
 
 #endif  // DETECT_NORMAL_COMMON_HPP

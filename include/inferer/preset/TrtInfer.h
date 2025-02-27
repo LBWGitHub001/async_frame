@@ -4,17 +4,15 @@
 
 #ifndef TRTINFER_H
 #define TRTINFER_H
+#ifdef TRT
 #include "inferer/preset/InferBase.h"
 
-#ifdef TRT
+
 #include <NvInfer.h>
 #include <NvInferPlugin.h>
 #include <NvOnnxParser.h>
 #include <NvInferRuntime.h>
 #include "threadPool/memBlock.h"
-#endif
-
-#ifdef TRT
 
 class TrtInfer
     : public InferBase, public MemBlockBase

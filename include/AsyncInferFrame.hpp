@@ -9,9 +9,13 @@
 #include "threadPool/threadPool.h"
 
 #ifdef TRT
-#define AUTO_INFER TrtInfer
+    #define AUTO_INFER TrtInfer
 #else
-#define AUTO_INFER VinoInfer
+#ifdef VINO
+    #define AUTO_INFER VinoInfer
+#else
+#define AUTO_INFER Unkwron
+#endif
 #endif
 
 #endif //ASYNCINFERFRAME_H
