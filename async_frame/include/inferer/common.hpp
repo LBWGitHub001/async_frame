@@ -5,9 +5,12 @@
 #ifndef DETECT_NORMAL_COMMON_HPP
 #define DETECT_NORMAL_COMMON_HPP
 #include "opencv2/opencv.hpp"
-#include "openvino/openvino.hpp"
 #include "assert.hpp"
 #include "filesystem.hpp"
+#ifdef VINO
+#include "openvino/openvino.hpp"
+#endif
+
 #ifdef TRT
 #include "NvInfer.h"
 #define CHECK(call)                                                                                                    \

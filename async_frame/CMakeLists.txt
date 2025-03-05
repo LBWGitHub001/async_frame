@@ -27,7 +27,6 @@ message(STATUS TensonrRT:${TensorRT_AVAILABLE})
 message(STATUS OpenVINO:${OpenVINO_AVAILABLE})
 
 if (${OpenVINO_AVAILABLE})
-    find_package(OpenVINO REQUIRED COMPONENTS Runtime ONNX)
     add_definitions(-DVINO)
 endif ()
 
@@ -36,10 +35,9 @@ if(${TensorRT_AVAILABLE})
 endif ()
 
 # include
-include_directories(include)
-if (${CUDA_AVAILABLE})
-    include_directories(${CUDA_INCLUDE_DIRS} ${TensorRT_INCLUDE_DIRS})
-endif ()
+list(APPEND INCLUDE_DIRS include ${CUDA_INCLUDE_DIRS} ${TensorRT_INCLUDE_DIRS})
+include_directories(${INCLUDE_DIRS})
+ament_export_include_directories(${CUDA_INCLUDE_DIRS} ${TensorRT_INCLUDE_DIRS})
 
 #Add&Compile source
 file(GLOB_RECURSE LIB_SRC src/inferer/*.cpp src/threadPool/*.cpp)
@@ -50,7 +48,13 @@ set(dependencies
         rcpputils
         OpenCV
 )
+if (${OpenVINO_AVAILABLE})
+    target_compile_definitions(${PROJECT_NAME} PUBLIC VINO)
+endif ()
 
+if(${TensorRT_AVAILABLE})
+    target_compile_definitions(${PROJECT_NAME} PUBLIC TRT)
+endif ()
 #Link libs
 ament_target_dependencies(${PROJECT_NAME} ${dependencies})
 target_include_directories(${PROJECT_NAME} PUBLIC
@@ -58,15 +62,6 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 target_link_libraries(${PROJECT_NAME}
         ${OpenCV_LIBS})
 
-if (${OpenVINO_AVAILABLE})
-    target_link_libraries(${PROJECT_NAME}
-    openvino::frontend::onnx openvino::runtime)
-endif ()
-if (${CUDA_AVAILABLE})
-    target_link_libraries(${PROJECT_NAME}
-            ${CUDA_LIBRARIES}
-            ${TensorRT_LIBRARIES})
-endif ()
 
 # Install include directories
 install(DIRECTORY include/
