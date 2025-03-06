@@ -35,9 +35,9 @@ if(${TensorRT_AVAILABLE})
 endif ()
 
 # include
-list(APPEND INCLUDE_DIRS include ${CUDA_INCLUDE_DIRS} ${TensorRT_INCLUDE_DIRS})
+list(APPEND INCLUDE_DIRS include ${cross_platform_INCLUDE_DIRS})
 include_directories(${INCLUDE_DIRS})
-ament_export_include_directories(${CUDA_INCLUDE_DIRS} ${TensorRT_INCLUDE_DIRS})
+
 #Add&Compile source
 file(GLOB_RECURSE LIB_SRC src/inferer/*.cpp src/threadPool/*.cpp)
 add_library(${PROJECT_NAME} SHARED ${LIB_SRC})
@@ -60,8 +60,8 @@ target_include_directories(${PROJECT_NAME} PUBLIC
         ${OpenCV_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME}
         ${OpenCV_LIBS})
-message(STATUS ${cross_platform_INCLUDE_DIRS})
-message(STATUS ${cross_platform_LIBRARIES})
+message(STATUS "cross_platform_INCLUDE_DIRS: ${cross_platform_INCLUDE_DIRS}")
+message(STATUS "cross_platform_LIBRARIES: ${cross_platform_LIBRARIES}")
 target_link_libraries(${PROJECT_NAME} ${cross_platform_LIBRARIES})
 
 
@@ -79,8 +79,11 @@ install(TARGETS ${PROJECT_NAME}
         INCLUDES DESTINATION include
 )
 
+#export include
+ament_export_include_directories(${cross_platform_INCLUDE_DIRS})
+
 #export lib
-ament_export_libraries(${CUDA_LIBRARIES})
+ament_export_libraries(${cross_platform_LIBRARIES} ${PROJECT_NAME})
 
 # export lib lib
 ament_export_targets(${PROJECT_NAME} HAS_LIBRARY_TARGET)

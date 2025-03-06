@@ -39,7 +39,8 @@ public:
         std::thread th(&AsyncInferer::result_loop, this);
         th.detach();
 
-        thread_pool_.setClear([](void* infer)
+        thread_pool_ = std::make_unique<ThreadPool<_Result,_Tag>>(MAX_QUEUE_LEN);
+        thread_pool_->setClear([](void* infer)
         {
             auto* infer_ptr = static_cast<_Infer*>(infer);
             delete infer_ptr;
@@ -51,7 +52,7 @@ public:
      */
     ~AsyncInferer()
     {
-        thread_pool_.join();
+        thread_pool_->join();
         result_start_ = false;
         std::this_thread::sleep_for(std::chrono::milliseconds(result_delay_ * 5));
     }
@@ -102,7 +103,7 @@ public:
      */
     void registerFreeStatic(std::function<void(void*)> FreeStatic)
     {
-        thread_pool_.setClear(FreeStatic);
+        thread_pool_->setClear(FreeStatic);
     }
 
     /*!
@@ -130,7 +131,7 @@ public:
             std::vector<void*> output_vec = infer->getResult();
             return post_function_(output_vec, output_bindings_, tag);
         };
-        thread_pool_.push(std::move(ff), tag);
+        thread_pool_->push(std::move(ff), tag);
     }
 
     /*!
@@ -165,7 +166,7 @@ private:
     std::shared_ptr<_Infer> infer_;
     std::function<_Result(std::vector<void*>&, std::vector<det::Binding>&, _Tag)> post_function_;
     //线程管理
-    ThreadPool<_Result, _Tag> thread_pool_;
+    std::unique_ptr<ThreadPool<_Result, _Tag>> thread_pool_{nullptr};
     //结果管理
     int result_delay_ = 100;
     bool result_start_ = true;
@@ -180,7 +181,7 @@ private:
         {
             _Result output;
             _Tag tag;
-            if (thread_pool_.fast_get(output, tag))
+            if (thread_pool_->fast_get(output, tag))
             {
                 callback_(output, tag);
                 //free(output);
