@@ -14,7 +14,6 @@
 #include <utility>
 #include <vector>
 #include "threadPool/common.h"
-#include "threadPool/memBlock.h"
 #include "inferer/preset/InferBase.h"
 
 template <class _Result, class _Tag = nullptr_t>

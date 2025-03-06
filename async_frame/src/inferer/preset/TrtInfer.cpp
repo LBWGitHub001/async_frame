@@ -7,8 +7,8 @@
 
 namespace fs = ghc::filesystem;
 
-TrtInfer::TrtInfer(const std::string& model_path,bool is_warmup, const std::string& device_name)
-    : InferBase(),MemBlockBase()
+TrtInfer::TrtInfer(const std::string& model_path,bool is_warmup, const std::string&)
+    : InferBase()
 {
     std::cout << std::endl << "||--------------You are using TensorRT--------------||" << std::endl;
     device_name_ = "CUDA";
@@ -39,7 +39,7 @@ TrtInfer::TrtInfer(const std::string& model_path,bool is_warmup, const std::stri
         TrtInfer::warmup();
 }
 
-TrtInfer::TrtInfer(const TrtInfer& other):InferBase(),MemBlockBase()
+TrtInfer::TrtInfer(const TrtInfer& other):InferBase()
 {
     model_path_ = other.getModelPath();
     device_name_ = "CUDA";
@@ -51,17 +51,17 @@ void TrtInfer::setModel(const std::string& model_path)
     model_path_ = model_path;
 }
 
-const std::string& TrtInfer::getModelPath() const
+std::string TrtInfer::getModelPath() const
 {
     return model_path_;
 }
 
-const int TrtInfer::get_size()
+int TrtInfer::get_size()
 {
     return sizeof(TrtInfer);
 }
 
-const std::string TrtInfer::get_name()
+std::string TrtInfer::get_name()
 {
     return "TrtInfer";
 }

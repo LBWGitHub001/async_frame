@@ -56,7 +56,7 @@ namespace pppPreset
             std::vector<float> confs;
             const det::Binding& data = output_binding[0];
             int size = data.size;
-            int dsize = data.dsize;
+            // int dsize = data.dsize;
             auto dims = data.dims;
             int num_archs = dims.d[1];
             int size_pre_arch = dims.d[2];
@@ -125,11 +125,11 @@ namespace pppPreset
             std::vector<cv::Rect> rects;
             std::vector<float> confs;
             const det::Binding& data = output_binding[0];
-            int size = data.size;
-            int dsize = data.dsize;
+            // int size = data.size;
+            // int dsize = data.dsize;
             auto dims = data.dims;
             int num_archs = dims.d[2];
-            int size_pre_arch = dims.d[1];
+            // int size_pre_arch = dims.d[1];
             auto buf = static_cast<float*>(origin_data[0]);
             auto index = [num_archs](int arch, int content) { return arch + content * num_archs; };
             for (int j = 0; j < num_archs; j++)

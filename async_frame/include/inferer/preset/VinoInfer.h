@@ -7,22 +7,21 @@
 
 #ifdef VINO
 #include "inferer/preset/InferBase.h"
-#include "threadPool/memBlock.h"
 
 class VinoInfer :
-    public InferBase,public MemBlockBase
+    public InferBase
 {
 public:
     VinoInfer() = default;
-    explicit  VinoInfer(const std::string& model_path, bool is_warmup = false, const std::string& device_name_ = "CPU");
-    explicit VinoInfer(VinoInfer& other);
-    ~VinoInfer();
+    explicit VinoInfer(const std::string& model_path, bool is_warmup = false, const std::string& device_name_ = "CPU");
+    VinoInfer(const VinoInfer& other);
+    ~VinoInfer() override;
     void setModel(const std::string& model_pat) override;
     void setDevice(const std::string& device_name);
-    const std::string& getModelPath() const override;
-    const std::string& getDevice() const;
-    const int get_size() override;
-    const std::string get_name() override;
+    [[nodiscard]] std::string getModelPath() const override;
+    [[nodiscard]] std::string getDevice() const;
+    int get_size() override;
+    std::string get_name() override;
 
     void init() override;
     void warmup() override;
@@ -30,7 +29,7 @@ public:
     void copy_from_data(const void* data) override;
     void copy_from_data(const void* data, const ov::Shape& shape);
     void infer() override;
-    void infer_async(const void* input,void** output) override;
+    void infer_async(const void* input, void** output) override;
     std::vector<void*>& getResult() override;
 
     [[nodiscard]] bool get_dynamic() const { return is_dynamic_; }
