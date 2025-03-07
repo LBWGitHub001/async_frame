@@ -47,6 +47,20 @@ public:
         });
     }
 
+    explicit AsyncInferer(int threadNum)
+    {
+        result_start_ = true;
+        std::thread th(&AsyncInferer::result_loop, this);
+        th.detach();
+
+        thread_pool_ = std::make_unique<ThreadPool<_Result,_Tag>>(threadNum);
+        thread_pool_->setClear([](void* infer)
+        {
+            auto* infer_ptr = static_cast<_Infer*>(infer);
+            delete infer_ptr;
+        });
+    }
+
     /*!
      * @brief 析构函数，调用时会阻塞当前线程，直至所有线程全部结束，然后停止所有服务
      */
