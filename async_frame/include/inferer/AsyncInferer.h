@@ -130,7 +130,7 @@ public:
         std::function<_Result(int,int)>
         ff = [this,get_input,tag](int pool_id, int thread_id)->_Result
         {
-            const auto* input = get_input(input_bindings_);
+            auto* input = get_input(input_bindings_);
             void* ptr;
             if (!ThreadPool<_Result, _Tag>::template try_to_malloc_static<_Infer>(pool_id, thread_id, infer_.get())
                 && !ThreadPool<_Result, _Tag>::get_staticMem_ptr(pool_id, thread_id, &ptr))
@@ -140,7 +140,7 @@ public:
             }
             ThreadPool<_Result, _Tag>::get_staticMem_ptr(pool_id, thread_id, &ptr);
             _Infer* infer = (_Infer*)ptr;
-            infer->copy_from_data(input);
+            infer->copy_from_data(&input);
             infer->infer();
             std::vector<void*> output_vec = infer->getResult();
             return post_function_(output_vec, output_bindings_, tag);
