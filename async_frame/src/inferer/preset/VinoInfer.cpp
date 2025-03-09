@@ -169,11 +169,11 @@ void VinoInfer::warmup()
     {
         for (auto& binding : input_bindings_)
         {
-            auto* input_data = new float[binding.size];
+            void* input_data = malloc(binding.size*sizeof(float));
             memset(input_data, 0, sizeof(float) * binding.size);
-            copy_from_data(input_data);
+            copy_from_data(&input_data);
             infer();
-            delete[] input_data;
+            free(input_data);
         }
     }
 }
@@ -196,9 +196,9 @@ void VinoInfer::copy_from_data(const void* data, const ov::Shape& shape)
     //request_.set_input_tensor(input_tensor);
 }
 
-void VinoInfer::copy_from_data(const void* data)
+void VinoInfer::copy_from_data(void** data)
 {
-    auto data_ptr = data;
+    auto data_ptr = *data;
     for (auto& binding : input_bindings_)
     {
         const auto size = binding.size;
@@ -207,6 +207,8 @@ void VinoInfer::copy_from_data(const void* data)
         copy_from_data(data_ptr, shape);
         data_ptr += size;
     }
+    free(*data);
+    *data = nullptr;
 }
 
 void VinoInfer::infer()

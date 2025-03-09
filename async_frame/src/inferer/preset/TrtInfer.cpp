@@ -199,19 +199,21 @@ void TrtInfer::preMalloc()
     }
 }
 
-void TrtInfer::copy_from_data(const void* data)
+void TrtInfer::copy_from_data(void** data)
 {
     int start = 0;
     int index = 0;
     for (auto& binding : input_bindings_)
     {
         const size_t size = binding.size * binding.dsize;
-        auto data_h_ptr = data + start;
+        auto data_h_ptr = *data + start;
         CHECK(cudaMemcpyAsync(device_ptrs_[index],data_h_ptr,size,cudaMemcpyHostToDevice,stream_));
 
         start += size;
         index++;
     }
+    free(*data);
+    *data = nullptr;
 }
 
 void TrtInfer::infer()

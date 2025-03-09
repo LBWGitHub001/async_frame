@@ -29,7 +29,7 @@ public:
     void init() override;
     void warmup() override;
     void preMalloc();
-    void copy_from_data(const void* data) override;
+    void copy_from_data(void** data) override;
     void infer() override;
     void infer_async(const void* input,void** output) override;
     std::vector<void*>& getResult() override;

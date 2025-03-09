@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 project(async_frame)
 
 # Release
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
+#set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif()
@@ -13,7 +13,7 @@ if (NOT CMAKE_CXX_STANDARD)
 endif ()
 
 if (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    add_compile_options(-Wall -Wextra -Wpedantic -O3)
+    add_compile_options(-Wall -Wextra -Wpedantic)
 endif ()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
@@ -70,6 +70,8 @@ message(STATUS "cross_platform_INCLUDE_DIRS: ${cross_platform_INCLUDE_DIRS}")
 message(STATUS "cross_platform_LIBRARIES: ${cross_platform_LIBRARIES}")
 target_link_libraries(${PROJECT_NAME} ${cross_platform_LIBRARIES})
 
+add_executable(Test test/test.cpp ${LIB_SRC})
+target_link_libraries(Test ${PROJECT_NAME})
 
 # Install include directories
 install(DIRECTORY include/

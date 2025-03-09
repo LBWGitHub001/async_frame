@@ -13,7 +13,7 @@ public:
     virtual ~InferBase() = default;
 
     InferBase() = default;
-    InferBase(const InferBase& other);
+    InferBase(const InferBase& other) = default;
 
     virtual void setModel(const std::string& model_path) = 0;
     [[nodiscard]] virtual std::string getModelPath() const = 0;
@@ -23,7 +23,7 @@ public:
     virtual int get_size() = 0;
     virtual std::string get_name() = 0;
 
-    virtual void copy_from_data(const void* data) = 0;
+    virtual void copy_from_data(void** data) = 0;
     virtual void infer() = 0;
     virtual void infer_async(const void* input,void** output) = 0;
     virtual void warmup() = 0;
