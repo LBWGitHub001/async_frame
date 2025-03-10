@@ -31,6 +31,7 @@ if (CUDA_FOUND)
         set(CMAKE_CUDA_COMPILER /usr/local/cuda/bin/nvcc)
         list(APPEND libs ${TensorRT_LIBRARIES})
         list(APPEND include_dir ${TensorRT_INCLUDE_DIRS})
+        set(EnabledExtras "ament_cmake_export_include_directories-extras.cmake;ament_cmake_export_libraries-extras.cmake;ament_cmake_export_targets-extras.cmake")
     else ()
         set(TensorRT_AVAILABLE FALSE)
     endif ()
@@ -49,6 +50,9 @@ else ()
     set(OpenVINO_AVAILABLE FALSE)
 endif ()
 
+if(OpenVINO_AVAILABLE AND NOT CUDA_AVAILABLE AND NOT TensorRT_AVAILABLE)
+    set(EnabledExtras "ament_cmake_export_libraries-extras.cmake;ament_cmake_export_targets-extras.cmake")
+    endif()
 
 add_executable(${PROJECT_NAME} main.cpp)
 
