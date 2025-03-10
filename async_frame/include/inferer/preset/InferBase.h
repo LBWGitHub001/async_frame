@@ -25,7 +25,7 @@ public:
 
     virtual void copy_from_data(void** data) = 0;
     virtual void infer() = 0;
-    virtual void infer_async(const void* input,void** output) = 0;
+    virtual void infer_async() = 0;
     virtual void warmup() = 0;
     virtual std::vector<void*>& getResult() =0;
 

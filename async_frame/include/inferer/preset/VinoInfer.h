@@ -29,7 +29,7 @@ public:
     void copy_from_data(void** data) override;
     void copy_from_data(const void* data, const ov::Shape& shape);
     void infer() override;
-    void infer_async(const void* input, void** output) override;
+    void infer_async() override;
     std::vector<void*>& getResult() override;
 
     [[nodiscard]] bool get_dynamic() const { return is_dynamic_; }

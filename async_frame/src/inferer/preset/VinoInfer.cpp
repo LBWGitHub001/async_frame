@@ -21,14 +21,14 @@ VinoInfer::VinoInfer(const std::string& model_path, bool is_warmup, const std::s
         VinoInfer::warmup();
 }
 
-VinoInfer::VinoInfer(const VinoInfer& other):InferBase(other)
+VinoInfer::VinoInfer(const VinoInfer& other): InferBase(other)
 {
     model_path_ = other.getModelPath();
     device_name_ = other.getDevice();
     VinoInfer::init();
 }
 
-VinoInfer::~VinoInfer()= default;
+VinoInfer::~VinoInfer() = default;
 
 void VinoInfer::setModel(const std::string& model_pat)
 {
@@ -77,6 +77,7 @@ void VinoInfer::init()
     {
         std::cout << "Your device do not support GPU-infer..." << std::endl;
         std::cout << "Will use CPU" << std::endl;
+        device_name_ = "CPU";
     }
     auto perf_mode = useGPU
                          ? ov::hint::performance_mode(ov::hint::PerformanceMode::THROUGHPUT)
@@ -169,7 +170,7 @@ void VinoInfer::warmup()
     {
         for (auto& binding : input_bindings_)
         {
-            void* input_data = malloc(binding.size*sizeof(float));
+            void* input_data = malloc(binding.size * sizeof(float));
             memset(input_data, 0, sizeof(float) * binding.size);
             copy_from_data(&input_data);
             infer();
@@ -185,7 +186,6 @@ void VinoInfer::preMalloc()
 
 void VinoInfer::copy_from_data(const void* data, const ov::Shape& shape)
 {
-    request_ = compiled_model_->create_infer_request();
     const auto input_port_ = compiled_model_->input();
     int size = 1;
     for (const auto len : shape)
@@ -193,7 +193,6 @@ void VinoInfer::copy_from_data(const void* data, const ov::Shape& shape)
     const auto input_port = compiled_model_->input();
     const ov::Tensor input = request_.get_tensor(input_port);
     memcpy(input.data(), data, size * sizeof(float));
-    //request_.set_input_tensor(input_tensor);
 }
 
 void VinoInfer::copy_from_data(void** data)
@@ -214,42 +213,34 @@ void VinoInfer::copy_from_data(void** data)
 void VinoInfer::infer()
 {
     request_.infer();
+    for (auto ptr : outputs_)
+    {
+        free(ptr);
+    }
+    outputs_.clear();
 }
 
-void VinoInfer::infer_async(const void* input, void** output)
+void VinoInfer::infer_async()
 {
-    auto request = compiled_model_->create_infer_request();
-    const auto input_port_ = compiled_model_->input();
-
-    int input_total_size = 1;
-    for (const auto& input_binding : input_bindings_)
+    request_.start_async();
+    for (auto ptr : outputs_)
     {
-        const auto input_size = input_binding.size;
-        const auto input_dsize = input_binding.dsize;
-        input_total_size *= input_size * input_dsize;
+        free(ptr);
     }
-    const auto input_port = compiled_model_->input();
-    const ov::Tensor input_tensor = request.get_tensor(input_port);
-    memcpy(input_tensor.data(), input, input_total_size);
-    request.infer();
-
-    int output_total_size = 1;
-    for (auto& output_binding : output_bindings_)
-    {
-        auto output_size = output_binding.size;
-        auto output_dsize = output_binding.dsize;
-        output_total_size *= output_size * output_dsize;
-    }
-
-    const ov::Tensor output_tensor = request.get_output_tensor();
-    *output = malloc(output_total_size);
-    memcpy(*output, output_tensor.data(), output_total_size);
+    outputs_.clear();
 }
 
 std::vector<void*>& VinoInfer::getResult()
 {
+    request_.wait();
     auto output_tensor = request_.get_output_tensor();
-    outputs_.push_back(output_tensor.data<float>());
+    for (auto binding : output_bindings_)
+    {
+        int size = binding.size*binding.dsize;
+        void* ptr = malloc(size);
+        memcpy(ptr,output_tensor.data<float>(),size);
+        outputs_.push_back(ptr);
+    }
     return outputs_;
 }
 

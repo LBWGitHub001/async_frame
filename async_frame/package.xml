@@ -15,6 +15,7 @@
   <depend>opencv</depend>
   <depend>rcpputils</depend>
   <depend>cross_platform</depend>
+  <depend>Boost</depend>
 
 
   <test_depend>ament_lint_auto</test_depend>

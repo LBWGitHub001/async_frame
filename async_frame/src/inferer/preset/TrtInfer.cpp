@@ -229,67 +229,17 @@ void TrtInfer::infer()
     CHECK(cudaStreamSynchronize(stream_));
 }
 
-void TrtInfer::infer_async(const void* input, void** output)
+void TrtInfer::infer_async()
 {
-    nvinfer1::IExecutionContext* context = nullptr;
-    context = engine_->createExecutionContext();
+    context_->enqueueV3(stream_);
 
-    cudaStream_t stream =nullptr;
-    CHECK(cudaStreamCreate(&stream));
-    std::vector<void*> d_ptrs;
-    int start = 0;
-    for (auto& input_binding : input_bindings_)
+    for (int i = 0; i < num_outputs_; i++)
     {
-        void* device_ptr;
-        int size = input_binding.size * input_binding.dsize;
-        CHECK(cudaMalloc(&device_ptr, size));
-        CHECK(cudaMemcpyAsync(device_ptr,input+start,size,cudaMemcpyHostToDevice,stream));
-        d_ptrs.push_back(device_ptr);
-
-        context->setInputShape(input_binding.name.c_str(),input_binding.dims);
-        context->setTensorAddress(input_binding.name.c_str(),device_ptr);
-        start += size;
+        size_t o_size = output_bindings_[i].size * output_bindings_[i].dsize;
+        CHECK(cudaMemcpyAsync(
+            host_ptrs_[i],device_ptrs_[i+num_inputs_],o_size,cudaMemcpyDeviceToHost,stream_));
     }
-
-    for (auto output_binding : output_bindings_)
-    {
-        void* device_ptr;
-        int size = output_binding.size * output_binding.dsize;
-        CHECK(cudaMalloc(&device_ptr, size));
-        d_ptrs.push_back(device_ptr);
-
-        context->setOutputTensorAddress(output_binding.name.c_str(),device_ptr);
-    }
-    context->enqueueV3(stream);
-
-    int total_output_size = 1;
-    for (auto output_binding : output_bindings_)
-    {
-        void* device_ptr;
-        int size = output_binding.size * output_binding.dsize;
-        CHECK(cudaMalloc(&device_ptr, size));
-        d_ptrs.push_back(device_ptr);
-
-        total_output_size *= output_binding.size*output_binding.dsize;
-        context->setOutputTensorAddress(output_binding.name.c_str(),device_ptr);
-    }
-    *output = malloc(total_output_size);
-
-    start = 0;
-    for (int index = 0; index < num_outputs_; index++)
-    {
-        auto output_binding = output_bindings_[index];
-        int size = output_binding.size * output_binding.dsize;
-        CHECK(cudaMemcpyAsync(*output+start,d_ptrs[index+num_inputs_],size,cudaMemcpyDeviceToHost,stream));
-        start += size;
-    }
-
-    cudaStreamDestroy(stream);
-    delete context;
-    for (auto& d_ptr : d_ptrs)
-    {
-        CHECK(cudaFree(d_ptr));
-    }
+    CHECK(cudaStreamSynchronize(stream_));
 }
 
 std::vector<void*>& TrtInfer::getResult()

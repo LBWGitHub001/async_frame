@@ -26,6 +26,7 @@ namespace thread_pool
         _Result result;
         _Tag tag;
         Result(time_t timestamp, _Result result, _Tag tag) :timestamp(timestamp), result(result), tag(tag) {}
+        Result() = default;
     };
 
     template <class _Static = nullptr_t>

@@ -31,7 +31,7 @@ public:
     void preMalloc();
     void copy_from_data(void** data) override;
     void infer() override;
-    void infer_async(const void* input,void** output) override;
+    void infer_async() override;
     std::vector<void*>& getResult() override;
     //tool
     void onnx_to_engine(const char* onnx_filename, const char* engine_filePath);

@@ -13,6 +13,8 @@
 #include <atomic>
 #include <utility>
 #include <vector>
+#include <boost/lockfree/queue.hpp>
+#include <boost/lockfree/spsc_queue.hpp>
 #include "threadPool/common.h"
 #include "inferer/preset/InferBase.h"
 
@@ -39,6 +41,15 @@ public:
             task_threads_.push_back(nullptr);
             static_memory_vector_.push_back(nullptr);
         }
+        results_ = std::make_unique<boost::lockfree::spsc_queue<Result>>(threadNum_ * 32);
+        id_seq_ = std::make_unique<boost::lockfree::spsc_queue<int>>(threadNum_ * 32);
+        if (!results_->is_lock_free())
+        {
+            std::cout << "[WARN] This type of Result is not support lock-free.Maybe cause more delay" << std::endl;
+        }
+        stop_ = false;
+        std::thread transToReaultQueue(&ThreadPool::transToQueue, this);
+        transToReaultQueue.detach();
     }
 
     /*!
@@ -46,8 +57,8 @@ public:
      */
     ~ThreadPool()
     {
-        join();
         clearStaticMem();
+        stop_ = true;
         pools_ptr_[pool_id_] = nullptr;
     }
 
@@ -149,17 +160,13 @@ public:
         auto fut = std::async(std::launch::async, [this,task,thread_id]()-> _Result
         {
             _Result result = task(pool_id_, thread_id);
-            std::thread end(&ThreadPool::release, this, thread_id);
-            end.detach();
             --num_busy_;
-            // std::cout << "Thread " << thread_id << " Free" << std::endl;
-            std::this_thread::sleep_for(std::chrono::microseconds(100));
             return result;
         });
 
         std::this_thread::sleep_for(std::chrono::microseconds(delay_us));
         //存入线程池
-        id_seq_.push(thread_id); //存储当前线程
+        while (!id_seq_->push(thread_id)) { std::this_thread::yield(); } //存储当前线程id
         std::unique_ptr<TaskThread> task_thread = std::make_unique<TaskThread>();
         task_thread->future = std::make_unique<std::future<_Result>>(std::move(fut));
         task_thread->timestamp = timestamp;
@@ -198,10 +205,10 @@ public:
 
     bool get(_Result& output, _Tag& tag = nullptr)
     {
-        if (results_.empty())
+        if (results_->empty())
             return false;
-        thread_pool::Result result = results_.front();
-        results_.pop();
+        Result result;
+        while (results_->pop(result)) { std::this_thread::yield(); }
         output = result.result;
         tag = result.tag;
         return true;
@@ -214,10 +221,10 @@ public:
      */
     bool fast_get(_Result& output, _Tag& tag)
     {
-        if (results_.empty())
+        if (results_->empty())
             return false;
-        thread_pool::Result result = results_.front();
-        results_.pop();
+        Result result;
+        while (!results_->pop(result)) { std::this_thread::yield(); }
         output = result.result;
         tag = result.tag;
         return true;
@@ -230,11 +237,9 @@ public:
      */
     bool image_get(cv::Mat& image)
     {
-        if (results_.empty())
+        if (results_->empty())
             return false;
-        thread_pool::Result result = results_.front();
-        results_.pop();
-        image = result.result.clone();
+        while (!results_->pop(image)) { std::this_thread::yield(); }
         return true;
     }
 
@@ -352,61 +357,33 @@ private:
     int ptr_;
     std::atomic<int> num_busy_{};
 
-    std::queue<Result> results_;
-    std::queue<int> id_seq_;
+    //无锁单消费者单生产者情况
+    std::unique_ptr<boost::lockfree::spsc_queue<Result>> results_{nullptr};
+    std::unique_ptr<boost::lockfree::spsc_queue<int>> id_seq_;
 
     //资源自动释放机制
-    void release(int thread_id)
-    {
-        int try_count = 0;
-        int try_freq = 5;
-        while (true)
-        {
-            int thread_id_first = id_seq_.front();
-            if (thread_id == thread_id_first) //就是当前线程取答案，快速去除结果放到结果队列中
-            {
-                //结果转存到结果队列
-                auto fut = task_threads_[thread_id]->future->share();
-                _Result result_raw = fut.get();
-                _Tag tag = task_threads_[thread_id]->tag;
-                time_t timestamp = task_threads_[thread_id]->timestamp;
-                Result result(timestamp, result_raw, tag);
-                results_.push(result);
-                //空出线程，其他线程也
-                task_threads_[thread_id] = nullptr;
-                id_seq_.pop();
-                // std::cout << "Thread " << thread_id << " released" << std::endl;
-                break;
-            }
-            if (ForceClose_)
-            {
-                if (try_count >= try_freq * 2) //等待时间过长
-                {
-                    release_mtx_.lock(); //防止同样的内容被执行两边
-                    if (id_seq_.front() == thread_id_first)
-                        id_seq_.pop();
-                    else
-                        continue;
-                    release_mtx_.unlock();
-                    //强制将该线程从线程池中移除，这可能导致资源的错误泄漏
-                    //TODO 检查这里的资源泄漏问题
-                    //delete task_threads_[thread_id_first];
-                    auto fut = std::move(task_threads_[thread_id_first]->future);
-                    task_threads_[thread_id_first] = nullptr;
-                    auto stop = fut->get();
-                    std::cout << "************************Thread " << thread_id <<
-                        " released Forcely********************" << std::endl;
-                    try_count = 0;
-                    continue;
-                }
-                if (thread_id_first != id_seq_.front()) //检测到队列更新，重置等待信息
-                {
-                    try_count = 0;
-                }
-            }
+    bool stop_;
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(MIN_PUSH_DELAY_ms / try_freq));
-            try_count++;
+    void transToQueue()
+    {
+        while (!stop_)
+        {
+            int thread_id;
+            while (!id_seq_->pop(thread_id) && !stop_) { std::this_thread::yield(); }
+            if (stop_)
+                break;
+            //结果转存到结果队列
+            while (task_threads_[thread_id] == nullptr && !stop_) { std::this_thread::yield(); }
+            if (stop_)
+                break;
+            auto fut = task_threads_[thread_id]->future->share();
+            _Result result_raw = fut.get();
+            _Tag tag = task_threads_[thread_id]->tag;
+            time_t timestamp = task_threads_[thread_id]->timestamp;
+            Result result(timestamp, result_raw, tag);
+            while (!results_->push(result)) { std::this_thread::yield(); }
+            //空出线程
+            task_threads_[thread_id] = nullptr;
         }
     }
 
@@ -432,6 +409,7 @@ template <class _Result, class _Tag>
 int ThreadPool<_Result, _Tag>::pools_count_ = 0;
 
 template <class _Result, class _Tag>
-std::vector<ThreadPool<_Result, _Tag>*> ThreadPool<_Result, _Tag>::pools_ptr_ = std::vector<ThreadPool<_Result, _Tag>*>();
+std::vector<ThreadPool<_Result, _Tag>*> ThreadPool<_Result, _Tag>::pools_ptr_ = std::vector<ThreadPool<_Result, _Tag>
+    *>();
 
 #endif //THREADPOOL_H

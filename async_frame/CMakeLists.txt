@@ -26,6 +26,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(OpenCV 4 REQUIRED)
 find_package(cross_platform REQUIRED)
+find_package(Boost REQUIRED)
 
 include(${cross_platform_DIR}/cross_platformConfig.cmake)
 message(STATUS CUDA:${CUDA_AVAILABLE})
@@ -41,7 +42,7 @@ if(${TensorRT_AVAILABLE})
 endif ()
 
 # include
-list(APPEND INCLUDE_DIRS include ${cross_platform_INCLUDE_DIRS})
+list(APPEND INCLUDE_DIRS include ${cross_platform_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 include_directories(${INCLUDE_DIRS})
 
 #Add&Compile source
@@ -64,6 +65,7 @@ endif ()
 ament_target_dependencies(${PROJECT_NAME} ${dependencies})
 target_include_directories(${PROJECT_NAME} PUBLIC
         ${OpenCV_INCLUDE_DIRS})
+
 target_link_libraries(${PROJECT_NAME}
         ${OpenCV_LIBS})
 message(STATUS "cross_platform_INCLUDE_DIRS: ${cross_platform_INCLUDE_DIRS}")

@@ -36,29 +36,29 @@ public:
     explicit AsyncInferer()
     {
         result_start_ = true;
-        std::thread th(&AsyncInferer::result_loop, this);
-        th.detach();
-
-        thread_pool_ = std::make_unique<ThreadPool<_Result,_Tag>>(MAX_QUEUE_LEN);
+        thread_pool_ = std::make_unique<ThreadPool<_Result, _Tag>>(MAX_QUEUE_LEN);
         thread_pool_->setClear([](void* infer)
         {
             auto* infer_ptr = static_cast<_Infer*>(infer);
             delete infer_ptr;
         });
+
+        std::thread th(&AsyncInferer::result_loop, this);
+        th.detach();
     }
 
     explicit AsyncInferer(int threadNum)
     {
         result_start_ = true;
-        std::thread th(&AsyncInferer::result_loop, this);
-        th.detach();
-
-        thread_pool_ = std::make_unique<ThreadPool<_Result,_Tag>>(threadNum);
+        thread_pool_ = std::make_unique<ThreadPool<_Result, _Tag>>(threadNum);
         thread_pool_->setClear([](void* infer)
         {
             auto* infer_ptr = static_cast<_Infer*>(infer);
             delete infer_ptr;
         });
+
+        std::thread th(&AsyncInferer::result_loop, this);
+        th.detach();
     }
 
     /*!
@@ -69,6 +69,11 @@ public:
         thread_pool_->join();
         result_start_ = false;
         std::this_thread::sleep_for(std::chrono::milliseconds(result_delay_ * 5));
+    }
+
+    void join()
+    {
+        thread_pool_->join();
     }
 
     /*!
@@ -127,24 +132,26 @@ public:
      */
     void pushInput(const std::function<void*(std::vector<det::Binding>&)>& get_input, _Tag tag = nullptr)
     {
-        std::function<_Result(int,int)>
-        ff = [this,get_input,tag](int pool_id, int thread_id)->_Result
-        {
-            auto* input = get_input(input_bindings_);
-            void* ptr;
-            if (!ThreadPool<_Result, _Tag>::template try_to_malloc_static<_Infer>(pool_id, thread_id, infer_.get())
-                && !ThreadPool<_Result, _Tag>::get_staticMem_ptr(pool_id, thread_id, &ptr))
+        std::function<_Result(int, int)>
+            ff = [this,get_input,tag](int pool_id, int thread_id)-> _Result
             {
-                std::cout << "Failed to allocate memory for pool " << pool_id << " thread " << thread_id << std::endl;
-                throw std::runtime_error("Failed to allocate static memory for pool");
-            }
-            ThreadPool<_Result, _Tag>::get_staticMem_ptr(pool_id, thread_id, &ptr);
-            _Infer* infer = (_Infer*)ptr;
-            infer->copy_from_data(&input);
-            infer->infer();
-            std::vector<void*> output_vec = infer->getResult();
-            return post_function_(output_vec, output_bindings_, tag);
-        };
+                auto* input = get_input(input_bindings_);
+                void* ptr;
+                if (!ThreadPool<_Result, _Tag>::template try_to_malloc_static<_Infer>(pool_id, thread_id, infer_.get())
+                    && !ThreadPool<_Result, _Tag>::get_staticMem_ptr(pool_id, thread_id, &ptr))
+                {
+                    std::cout << "Failed to allocate memory for pool " << pool_id << " thread " << thread_id <<
+                        std::endl;
+                    throw std::runtime_error("Failed to allocate static memory for pool");
+                }
+                ThreadPool<_Result, _Tag>::get_staticMem_ptr(pool_id, thread_id, &ptr);
+                _Infer* infer = (_Infer*)ptr;
+                infer->copy_from_data(&input);
+                infer->infer_async();
+                std::vector<void*>& output_vec = infer->getResult();
+                auto result = post_function_(output_vec, output_bindings_, tag);
+                return result;
+            };
         thread_pool_->push(std::move(ff), tag);
     }
 
